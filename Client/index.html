@@ -1,0 +1,514 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <title>Tank dual</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
+  <style type="text/css">
+    body
+    {
+      color: #71544e;
+      font-family: Monospace;
+      font-size: 13px;
+      text-align: center;
+      background-color: #bfd1e5;
+      margin: 0px;
+      overflow: hidden;
+    }
+    
+    #info
+    {
+      position: absolute;
+      top: 0px;
+      width: 100%;
+      padding: 5px;
+    }
+    
+    a
+    {
+      color: #b07861;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    Generating...</div>
+  <div id="clientlist" style="position: absolute; right: 0px; top: 0px; width: 200px;
+    height: 400px; overflow: hidden; z-index: 10000; background-color: transparent;
+    text-shadow: #ffffff 0px 0px 2px; color: Red; text-align: left;">
+  </div>
+  <div id="messages" style="position: absolute; left: 0px; top: 0px; width: 200px;
+    height: 400px; overflow: hidden; z-index: 10000; background-color: transparent;
+    text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black; color: Red;
+    text-align: left;">
+  </div>
+  <div id="icons" style="position: absolute; right: 0px; top: 0px; width: 96px; height: 48px;
+    overflow: hidden; z-index: 10001; background-color: transparent; color: Black;">
+    <img src="graphics/gear.png" alt="settings" /><img src="graphics/questionmark.png"
+      alt="help" onclick="showHelp()" />
+  </div>
+  <!--
+    <div id="ranges" style="position:absolute; right:0px; top:0px; width:300px; height:400px; overflow:hidden; z-index:10000; background-color:transparent; text-align: right;">
+    <table border="0" cellpadding="0" cellspacing="1">
+    <tr><td>Face:</td><td><input type="range" min="0" max="9" value="0" step="1" onchange="uvno = this.value; document.getElementById('NO').innerHTML=this.value; setSliders();" /></td><td style="width:25px"><span id="NO">0</span></td></tr>
+    <tr><td>Vertex 0 U:</td><td><input type="range" min="0" max="10" value="0" step="1" onchange="setU(uvno,0,this.value/10.0);document.getElementById('U0').innerHTML=this.value/10.0;" /></td><td><div id="U0">0</div></td></tr>
+    <tr><td>Vertex 0 V:</td><td><input type="range" min="0" max="10" value="0" step="1" onchange="setV(uvno,0,this.value/10.0);document.getElementById('V0').innerHTML=this.value/10.0;" /></td><td><span id="V0">0</span></td></tr>
+    <tr><td>Vertex 1 U:</td><td><input type="range" min="0" max="10" value="0" step="1" onchange="setU(uvno,1,this.value/10.0);document.getElementById('U1').innerHTML=this.value/10.0;" /></td><td><span id="U1">0</span></td></tr>
+    <tr><td>Vertex 1 V:</td><td><input type="range" min="0" max="10" value="0" step="1" onchange="setV(uvno,1,this.value/10.0);document.getElementById('V1').innerHTML=this.value/10.0;" /></td><td><span id="V1">0</span></td></tr>
+    <tr><td>Vertex 2 U:</td><td><input type="range" min="0" max="10" value="0" step="1" onchange="setU(uvno,2,this.value/10.0);document.getElementById('U2').innerHTML=this.value/10.0;" /></td><td><span id="U2">0</span></td></tr>
+    <tr><td>Vertex 2 V:</td><td><input type="range" min="0" max="10" value="0" step="1" onchange="setV(uvno,2,this.value/10.0);document.getElementById('V2').innerHTML=this.value/10.0;" /></td><td><span id="V2">0</span></td></tr>
+    <tr><td>Vertex 3 U:</td><td><input type="range" min="0" max="10" value="0" step="1" onchange="setU(uvno,3,this.value/10.0);document.getElementById('U3').innerHTML=this.value/10.0;" /></td><td><span id="U3">0</span></td></tr>
+    <tr><td>Vertex 3 V:</td><td><input type="range" min="0" max="10" value="0" step="1" onchange="setV(uvno,3,this.value/10.0);document.getElementById('V3').innerHTML=this.value/10.0;" /></td><td><span id="V3">0</span></td></tr>
+    </table>
+    </div>
+    -->
+  <div id="infowindow" style="position: absolute; left: 0px; top: 0px; width: 100%;
+    height: 140px; color: black;">
+    <div>
+    </div>
+    <div id="help" style="background-image: url(graphics/t80.png); background-repeat:repeat; display:none;">
+      Welcome to this small tank game in development<br />
+      <img src="graphics/wasdkeys.png" alt="" />&nbsp;<img src="graphics/arrowkeys.png"
+        alt="" />
+      <br />
+      Things to come:<br />
+      - Gravity<br />
+      - Different vehicle<br />
+      - Use of mouse to turn camera/turret and shooting<br />
+      - Full screen<br />
+      - Remap keys (Got complaints from french people that WASD are bad keys)<br />
+      - Cookies to store your name and key setup<br />
+    </div>
+  </div>
+  <div id="backdiv" style="background-color: #000000; opacity: 0.8; filter: alpha(opacity=80);
+    position: absolute; top: 0px; left: 0px; width: 100%; height: 100%; display: none;
+    z-index: 20000">
+  </div>
+  <div id="setnamediv" style="position: absolute; left: 50%; top: 50%; margin-left: -400px; margin-top: -50px; width: 800px; height: 100px; text-align: center; display: none; z-index: 20001">
+    <img src="graphics/armoreddeathmatch.png" alt ="ArmoredDeathmatch" />
+    Enter your name<br />
+    <input id="typename" type="text" value="Guest" onkeyup="return isEnterKey(event);" /><br />
+    <div id="namemsg" style="color: red">
+    </div>
+  </div>
+  <audio id="intromusic">
+   <source src="audio/When_Johnny_Comes_Marching_Home.ogg" type="audio/ogg" />
+  </audio>
+  <script src="script/landscape.js" type="text/javascript"></script>
+  <script src="script/keyboard.js" type="text/javascript"></script>
+  <script src="script/tank.js" type="text/javascript"></script>
+  <script src="script/bullet.js" type="text/javascript"></script>
+  <script src="script/socket.js" type="text/javascript"></script>
+  <script src="script/three.js" type="text/javascript"></script>
+  <script src="script/gui.js" type="text/javascript"></script>
+  <script src="script/explotion.js" type="text/javascript"></script>
+  <script type="text/javascript">
+    var namemsgdiv;
+    var container;
+    var camera, scene, renderer, texture, ambient, landscape;
+    var time, delta, oldTime;
+    var messagesdiv = document.getElementById("messages");
+    var typenamediv = document.getElementById("typename");
+    var clientlistdiv = document.getElementById("clientlist");
+    var help = document.getElementById("help");
+    var myid = -1;
+    var uvno = 0;
+    var box = new Array();
+    var oldskidx = -1;
+    var oldskidy = -1;
+    var mesh;
+
+    var windowHalfX = window.innerWidth / 2;
+    var windowHalfY = window.innerHeight / 2;
+
+    init();
+
+    function showHelp() {
+      help.style.display = "";
+      setTimeout("fade('help');", 5000);
+    }
+
+    function init() {
+      namemsgdiv = document.getElementById("namemsg");
+      setupWebSocket();
+
+      container = document.getElementById('container');
+
+      camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 10, 100000);
+      camera.position.x = 1; // Initial start the camera is overviewing the entire map.
+      camera.position.y = 15000;
+      camera.position.z = 0;
+      camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+      scene = new THREE.Scene();
+      //scene.fog = new THREE.FogExp2(0xffffff, 0.0025);
+      scene.add(camera);
+      /*
+      var material = new THREE.MeshLambertMaterial({ color: 0xFFFFFF, ambient: 0x808080 });
+      for (var i = 0; i < 5; i++) {
+        box[i] = new THREE.Mesh(new THREE.CubeGeometry(10, 10, 10, 1, 1, 1), material);
+        scene.add(box[i]);
+      }
+      */
+      // create a point light
+      var pointLight = new THREE.PointLight(0xFFFFFF);
+
+      // set its position
+      pointLight.position.x = 1000;
+      pointLight.position.y = 1000;
+      pointLight.position.z = 1000;
+
+      // add to the scene
+      scene.add(pointLight);
+
+      ambient = new THREE.AmbientLight(0xbbbbbb);
+      scene.add(ambient);
+
+      //      material = new THREE.MeshLambertMaterial({ color: 0xFFFFFF, ambient: 0x808080 });
+      /*
+      for (var i = 0; i < 5; i++) {
+      box[i] = new THREE.Mesh(new THREE.CubeGeometry(100, 100, 100, 1, 1, 1), material);
+      scene.add(box[i]);
+      }
+      */
+
+      // Do the skybox
+      var urlPrefix = "graphics/skybox/";
+      var urls = [urlPrefix + "posx.jpg", urlPrefix + "negx.jpg",
+    urlPrefix + "posy.jpg", urlPrefix + "negy.jpg",
+    urlPrefix + "posz.jpg", urlPrefix + "negz.jpg"];
+      var textureCube = THREE.ImageUtils.loadTextureCube(urls);
+
+      // Skybox shader
+      var shader = THREE.ShaderLib["cube"];  //THREE.ShaderUtils.lib["cube"];
+      var uniforms = THREE.UniformsUtils.clone(shader.uniforms);
+      uniforms['tCube'].texture = textureCube; // textureCube has been init before
+      var material = new THREE.ShaderMaterial({
+        fragmentShader: shader.fragmentShader,
+        vertexShader: shader.vertexShader,
+        uniforms: uniforms
+      });
+
+      // build the skybox Mesh 
+      skyboxMesh = new THREE.Mesh(new THREE.BoxGeometry(100000, 100000, 100000, 1, 1, 1, null, true), material);
+      skyboxMesh.doubleSided = true;
+      // add it to the scene
+      scene.add(skyboxMesh);
+
+      renderer = new THREE.WebGLRenderer();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+
+      container.innerHTML = "";
+
+      container.appendChild(renderer.domElement);
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      render();
+    }
+/*
+    function sendPos() {
+  3    doSend(tanks[myid].tankbody.position.x + ";" + tanks[myid].tankbody.position.y + ";" + tanks[myid].tankbody.position.z + ";" + tanks[myid].tankbody.rotation.y + ";" + tanks[myid].tankturret.rotation.y + ";" + tanks[myid].tankbarrel.rotation.x);
+    }
+*/
+    function setBox(no, x, y, z) {
+      box[no].position.x = x;
+      box[no].position.y = y;
+      box[no].position.z = z;
+    }
+
+
+    function tick() {
+/*
+      if (tanks.length > 0) {
+        if (myid >= 0) {
+          if (currentlyPressedKeys[37]) { // Left cursor key
+            tanks[myid].turnspeed -= tanks[myid].turnacceleration;
+            if (tanks[myid].turnspeed < -tanks[myid].maxturnspeed)
+              tanks[myid].turnspeed = -tanks[myid].maxturnspeed
+          } else  // If we are not turning the tank left it should stop turning
+          {
+            if (tanks[myid].turnspeed < 0) {
+              tanks[myid].turnspeed += tanks[myid].turndeceleration
+              if (tanks[myid].turnspeed > 0)
+                tanks[myid].turnspeed = 0;
+            }
+          }
+          if (currentlyPressedKeys[39]) { // Right cursor key
+            tanks[myid].turnspeed += tanks[myid].turnacceleration;
+            if (tanks[myid].turnspeed > tanks[myid].maxturnspeed)
+              tanks[myid].turnspeed = tanks[myid].maxturnspeed
+          } else  // If we are not turning the tank left it should stop turning
+          {
+            if (tanks[myid].turnspeed > 0) {
+              tanks[myid].turnspeed -= tanks[myid].turndeceleration;
+              if (tanks[myid].turnspeed < 0)
+                tanks[myid].turnspeed = 0;
+            }
+          }
+          if (currentlyPressedKeys[38]) { // Up cursor key
+            tanks[myid].velocity += tanks[myid].acceleration;
+            if (tanks[myid].velocity > tanks[myid].maxvelocity)
+              tanks[myid].velocity = tanks[myid].maxvelocity;
+          } else  // If we are not accelerating the tank it should slowley stop
+          {
+            if (tanks[myid].velocity > 0) {
+              tanks[myid].velocity -= tanks[myid].deceleration;
+              if (tanks[myid].velocity < 0)
+                tanks[myid].velocity = 0;
+            }
+          }
+          if (currentlyPressedKeys[40]) { // Down cursor key
+            tanks[myid].velocity -= tanks[myid].acceleration;
+            if (tanks[myid].velocity < -tanks[myid].maxvelocity)
+              tanks[myid].velocity = -tanks[myid].maxvelocity;
+          } else  // If we are not reversing the tank it should slowley stop reversing
+          {
+            if (tanks[myid].velocity < 0) {
+              tanks[myid].velocity += tanks[myid].deceleration;
+              if (tanks[myid].velocity > 0)
+                tanks[myid].velocity = 0;
+            }
+          }
+          if (currentlyPressedKeys[65]) { // A key, turn turet left
+            tanks[myid].turret.turnspeed -= tanks[myid].turret.turnacceleration;
+            if (tanks[myid].turret.turnspeed < -tanks[myid].turret.maxturnspeed)
+              tanks[myid].turret.turnspeed = -tanks[myid].turret.maxturnspeed
+          } else  // If we are not turning the turret left it should stop turning
+          {
+            if (tanks[myid].turret.turnspeed < 0.0) {
+              tanks[myid].turret.turnspeed += tanks[myid].turret.turndeceleration
+              if (tanks[myid].turret.turnspeed > 0.0)
+                tanks[myid].turret.turnspeed = 0.0;
+            }
+          }
+          if (currentlyPressedKeys[68]) { // D key, turn turet left
+            tanks[myid].turret.turnspeed += tanks[myid].turret.turnacceleration;
+            if (tanks[myid].turret.turnspeed > tanks[myid].turret.maxturnspeed)
+              tanks[myid].turret.turnspeed = tanks[myid].turret.maxturnspeed
+          } else  // If we are not turning the turret left it should stop turning
+          {
+            if (tanks[myid].turret.turnspeed > 0.0) {
+              tanks[myid].turret.turnspeed -= tanks[myid].turret.turndeceleration
+              if (tanks[myid].turret.turnspeed < 0.0)
+                tanks[myid].turret.turnspeed = 0.0;
+            }
+          }
+          if (currentlyPressedKeys[87]) { // W key, raise barrel
+            tanks[myid].barrel.turnspeed -= tanks[myid].barrel.turnacceleration;
+            if (tanks[myid].barrel.turnspeed < -tanks[myid].barrel.maxturnspeed)
+              tanks[myid].barrel.turnspeed = -tanks[myid].barrel.maxturnspeed;
+          } else  // If we are not turning the barrel left it should stop turning
+          {
+            if (tanks[myid].barrel.turnspeed < 0.0) {
+              tanks[myid].barrel.turnspeed += tanks[myid].barrel.turndeceleration
+              if (tanks[myid].barrel.turnspeed > 0.0)
+                tanks[myid].barrel.turnspeed = 0.0;
+            }
+          }
+          if (currentlyPressedKeys[83]) { // S key, lower barrel
+            tanks[myid].barrel.turnspeed += tanks[myid].barrel.turnacceleration;
+            if (tanks[myid].barrel.turnspeed > tanks[myid].barrel.maxturnspeed)
+              tanks[myid].barrel.turnspeed = tanks[myid].barrel.maxturnspeed;
+          } else  // If we are not turning the barrel left it should stop turning
+          {
+            if (tanks[myid].barrel.turnspeed > 0.0) {
+              tanks[myid].barrel.turnspeed -= tanks[myid].barrel.turndeceleration
+              if (tanks[myid].barrel.turnspeed < 0.0)
+                tanks[myid].barrel.turnspeed = 0.0;
+            }
+          }
+        }
+  */
+        /*
+        time = new Date().getTime();
+        delta = time - oldTime;
+        oldTime = time;
+
+        if (isNaN(delta) || delta > 1000 || delta == 0) {
+        delta = 1000 / 60;
+        }
+        */
+        delta = 2;
+
+        for (var id in tanks) {
+/*
+          if (tanks[id].barrel.turnspeed < 0 && tanks[id].tankbarrel.rotation.x > -tanks[id].barrel.maxturn)
+            tanks[id].tankbarrel.rotation.x += tanks[id].barrel.turnspeed * delta;
+          if (tanks[id].barrel.turnspeed > 0 && tanks[id].tankbarrel.rotation.x <= -tanks[id].barrel.minturn)
+            tanks[id].tankbarrel.rotation.x += tanks[id].barrel.turnspeed * delta;
+
+          tanks[id].tankbody.rotation.y -= tanks[id].turnspeed * delta;
+          tanks[id].tankturret.rotation.y -= tanks[id].turret.turnspeed * delta;
+          var movex = Math.sin(tanks[id].tankbody.rotation.y) * tanks[id].velocity * delta;
+          var movez = Math.cos(tanks[id].tankbody.rotation.y) * tanks[id].velocity * delta;
+          tanks[id].tankbody.position.x += movex;
+          tanks[id].tankbody.position.z += movez;
+*/
+          var gridx = toHeightMapX(tanks[id].tankbody.position.x);
+          var gridz = toHeightMapZ(tanks[id].tankbody.position.z);
+
+          tanks[id].tankbody.position.y = pointHeight(gridx, gridz) + 20;
+        }
+        
+        if (myid >= 0) {
+/*
+          if (tanks[myid].tankbody.position.x < -(landscapescale - 100)) tanks[myid].tankbody.position.x = -(landscapescale - 100);
+          if (tanks[myid].tankbody.position.x > (landscapescale - 100)) tanks[myid].tankbody.position.x = (landscapescale - 100);
+          if (tanks[myid].tankbody.position.z < -(landscapescale - 100)) tanks[myid].tankbody.position.x = -(landscapescale - 100);
+          if (tanks[myid].tankbody.position.z > (landscapescale - 100)) tanks[myid].tankbody.position.z = (landscapescale - 100);
+          */
+          var skidx = Math.round(toSkidmarksX(tanks[myid].tankbody.position.x));
+          var skidy = Math.round(toSkidmarksZ(tanks[myid].tankbody.position.z));
+          var dodraw = false;
+          if (oldskidx != skidx) {
+            oldskidx = skidx;
+            dodraw = true;
+          }
+          if (oldskidy != skidy) {
+            oldskidy = skidy;
+            dodraw = true;
+          }
+          if (dodraw) {
+//            ctx.fillStyle = "rgba(0, 0, 0, 0.1)";
+            ctx.fillStyle = "rgba(49, 49, 17, 0.1)";
+            ctx.fillRect(skidx - 1, skidy - 1, 2, 2);
+            texture1.needsUpdate = true;
+          }
+        }
+        
+        for (var id in bullets) {
+          bullets[id].obj.position.x += bullets[id].velocity.x;
+          bullets[id].obj.position.y += bullets[id].velocity.y;
+          bullets[id].obj.position.z += bullets[id].velocity.z;
+        }
+
+        for (var i = explotions.length - 1; i >= 0; i--) {
+          var exp = explotions[i];
+          exp.tick();
+          if (exp.frame <= 0) {
+            for (var j = 0; j < exp.particles; j++) {
+              scene.remove(exp.cubes[j]);
+            }
+            explotions.splice(i, 1);
+          }
+        }
+      }
+//    }
+
+      function render() {
+      //tankbody.position.y -= tanks[myid].velocityy;
+      //tanks[myid].velocityy += gravity;
+
+      var avgy = 0;
+      /*
+      var gridx = toHeightMapX(tanks[myid].tankbody.position.x);
+      var gridz = toHeightMapZ(tanks[myid].tankbody.position.z);
+
+      tanks[myid].tankbody.position.y = pointHeight(gridx, gridz) + 20;
+      */
+      if (tanks.length > 0) {
+        calculateQuaternions();
+      }
+
+      if (myid >= 0) {
+        camera.position.x = tanks[myid].tankbody.position.x - Math.sin(tanks[myid].tankbody.rotation.y + tanks[myid].tankturret.rotation.y) * 200;
+        camera.position.z = tanks[myid].tankbody.position.z - Math.cos(tanks[myid].tankbody.rotation.y + tanks[myid].tankturret.rotation.y) * 200;
+        camera.position.y = tanks[myid].tankbody.position.y + 100 + (200 * tanks[myid].tankbarrel.rotation.x);
+        camera.lookAt(tanks[myid].tankbody.position);
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    function calculateQuaternions() {
+      for (var id in tanks) {
+        var n = getLandscapeNormal(id);
+        var q1 = new THREE.Quaternion();
+        q1.setFromAxisAngle(new THREE.Vector3(0, 1, 0), tanks[id].tankbody.rotation.y);
+        var q2 = new THREE.Quaternion();
+        var axis = new THREE.Vector3(0, 1, 0);
+        var theta = Math.acos(axis.dot(n));
+        axis.cross(n).normalize();
+        q2.setFromAxisAngle(axis, theta);
+        q2.multiply(q1);
+        tanks[id].tankbody.quaternion = q2;
+      }
+    }
+
+    var callback = function () {
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+    }
+
+    window.addEventListener('resize', callback, false);
+  </script>
+</body>
+</html>
+<!--
+
+Full screen
+
+var el = document.documentElement
+    , rfs = // for newer Webkit and Firefox
+           el.requestFullScreen
+        || el.webkitRequestFullScreen
+        || el.mozRequestFullScreen
+
+        || el.msRequestFullScreen
+;
+if(typeof rfs!="undefined" && rfs){
+  rfs.call(el);
+} else if(typeof window.ActiveXObject!="undefined"){
+  // for Internet Explorer
+  var wscript = new ActiveXObject("WScript.Shell");
+  if (wscript!=null) {
+     wscript.SendKeys("{F11}");
+  }
+}
+
+
+line intersects plane.
+
+
+var controller = new THREE.Object3D();
+var gui = new DAT.GUI({width: 160});
+
+controller.setCurrent = function(current) {
+  this.current = current;
+  this.x.setValue(current.position.x);
+  this.y.setValue(current.position.y);
+  this.z.setValue(current.position.z);
+};
+      
+controller.x = gui.add(controller.position, 'x').onChange(function(v){
+  controller.current.position.x = v;
+});
+
+
+var projector = new THREE.Projector();
+window.addEventListener('mousedown', function (ev){
+  if (ev.target == renderer.domElement) {
+    var x = ev.clientX;
+    var y = ev.clientY;
+    var v = new THREE.Vector3((x/width)*2-1, -(y/height)*2+1, 0.5);
+    projector.unprojectVector(v, camera);
+    var ray = new THREE.Ray(camera.position, 
+                            v.subSelf(camera.position).normalize());
+    var intersects = ray.intersectObjects(controller.objects);
+    if (intersects.length > 0) {
+      controller.setCurrent(intersects[0].object);
+    }
+  }
+}, false);
+
+-->
