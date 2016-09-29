@@ -296,7 +296,9 @@ function setTank(id, x, /*y, */z, r, tr, br, v, ts, tts, bts) {
       axis.cross(n).normalize();
       q2.setFromAxisAngle(axis, theta);
       q2.multiply(q1);
-      tanks[i].tankbody.quaternion = q2;
+      //tanks[i].tankbody.useQuaternion = true;
+      //tanks[i].tankbody.quaternion = q2;
+      tanks[i].tankbody.setRotationFromQuaternion(q2);
       break;
     }
   }

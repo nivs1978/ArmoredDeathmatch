@@ -430,7 +430,7 @@
     }
 
     function calculateQuaternions() {
-      for (var id in tanks) {
+   /*   for (var id in tanks) {
         var n = getLandscapeNormal(id);
         var q1 = new THREE.Quaternion();
         q1.setFromAxisAngle(new THREE.Vector3(0, 1, 0), tanks[id].tankbody.rotation.y);
@@ -440,8 +440,8 @@
         axis.cross(n).normalize();
         q2.setFromAxisAngle(axis, theta);
         q2.multiply(q1);
-        tanks[id].tankbody.quaternion = q2;
-      }
+        tanks[id].tankbody.applyQuaternion(q2);
+      }*/
     }
 
     var callback = function () {
