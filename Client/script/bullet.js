@@ -1,4 +1,22 @@
-﻿var bullets = [];
+﻿/*
+This file is part of Armored Deathmatch by Hans Milling.
+
+Armored Deathmatch is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Armored Deathmatch is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Armored Deathmatch.  If not, see <http://www.gnu.org/licenses/>.
+	
+*/
+
+var bullets = [];
 
 function Bullet(i, vi, x, y, z, vx, vy, vz) {
   this.id = i;
@@ -9,27 +27,9 @@ function Bullet(i, vi, x, y, z, vx, vy, vz) {
     "z": vz
   };
 
-  /*
-  var mats = [];
-  mats.push(new THREE.MeshBasicMaterial({ color: 0x009e60 }));
-  mats.push(new THREE.MeshBasicMaterial({ color: 0x009e60 }));
-  mats.push(new THREE.MeshBasicMaterial({ color: 0x0051ba }));
-  mats.push(new THREE.MeshBasicMaterial({ color: 0x0051ba }));
-  mats.push(new THREE.MeshBasicMaterial({ color: 0xffd500 }));
-  mats.push(new THREE.MeshBasicMaterial({ color: 0xffd500 }));
-  mats.push(new THREE.MeshBasicMaterial({ color: 0xff5800 }));
-  mats.push(new THREE.MeshBasicMaterial({ color: 0xff5800 }));
-  mats.push(new THREE.MeshBasicMaterial({ color: 0xC41E3A }));
-  mats.push(new THREE.MeshBasicMaterial({ color: 0xC41E3A }));
-  mats.push(new THREE.MeshBasicMaterial({ color: 0xffffff }));
-  mats.push(new THREE.MeshBasicMaterial({ color: 0xffffff }));
-  var faceMaterial = new THREE.MeshFaceMaterial(mats);
-
-  var cubeGeom = new THREE.BoxGeometry(2.9, 2.9, 2.9);
-  var cube = new THREE.Mesh(cubeGeom, faceMaterial);*/
   var geom = new THREE.BoxGeometry(10, 10, 10, 1, 1, 1);
   var material = new THREE.MeshLambertMaterial({ color: 0xFFFFFF, ambient: 0x808080 });
-  this.obj = new THREE.Mesh(geom, material); // new THREE.MeshFaceMaterial([material])
+  this.obj = new THREE.Mesh(geom, material);
   this.obj.position.x = x;
   this.obj.position.y = y;
   this.obj.position.z = z;

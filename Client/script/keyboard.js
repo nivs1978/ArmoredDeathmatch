@@ -1,4 +1,22 @@
-﻿var currentlyPressedKeys = {};
+﻿/*
+This file is part of Armored Deathmatch by Hans Milling.
+
+Armored Deathmatch is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Armored Deathmatch is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Armored Deathmatch.  If not, see <http://www.gnu.org/licenses/>.
+	
+*/
+
+var currentlyPressedKeys = {};
 
 var KeyPrimaryLeft = 37; //Cursor Left
 var KeyPrimaryRight = 39; // Cursor Right
@@ -38,14 +56,12 @@ function handleKeyDown(event) {
         doSend("+8");
         break;
       case KeyFire:
-        var barrelmatrix = new THREE.Matrix4().multiplyMatrices(tanks[myid].tankbarrel.matrixWorld, tanks[myid].tankbarrel.matrix);
+        var bstart = new THREE.Vector3().setFromMatrixPosition(tanks[myid].tankbarrel.matrixWorld);
         var vector = new THREE.Vector3(0, 0, 56);
-        var shellpos = vector.applyMatrix4( tanks[myid].tankbarrel.matrixWorld);
-        var bstart = new THREE.Vector3(tanks[myid].tankbarrel.matrixWorld.n14, tanks[myid].tankbarrel.matrixWorld.n24, tanks[myid].tankbarrel.matrixWorld.n34);
-        var bend = new THREE.Vector3(shellpos.x, shellpos.y, shellpos.z);
+        var bend = vector.applyMatrix4(tanks[myid].tankbarrel.matrixWorld);
         var direction = bstart.subVectors(bend, bstart);
         direction.normalize();
-        doSend("+9;" + shellpos.x + ";" + shellpos.y + ";" + shellpos.z + ";" + direction.x + ";" + direction.y + ";" + direction.z);
+        doSend("+9;" + bend.x + ";" + bend.y + ";" + bend.z + ";" + direction.x + ";" + direction.y + ";" + direction.z);
         break;
     }
   }

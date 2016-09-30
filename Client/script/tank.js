@@ -1,4 +1,22 @@
-﻿var tanks = [];
+﻿/*
+This file is part of Armored Deathmatch by Hans Milling.
+
+Armored Deathmatch is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Armored Deathmatch is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Armored Deathmatch.  If not, see <http://www.gnu.org/licenses/>.
+	
+*/
+
+var tanks = [];
 function Tank(i, n) {
   this.id = i;
   this.name = n;
@@ -278,7 +296,6 @@ function setTank(id, x, /*y, */z, r, tr, br, v, ts, tts, bts) {
     if (tanks[i].id == id)
     {
       tanks[i].tankbody.position.x = x;
-    //  tanks[i].tankbody.position.y = y;
       tanks[i].tankbody.position.z = z;
       tanks[i].tankbody.rotation.y = r;
       tanks[i].rotation = r;
@@ -291,15 +308,13 @@ function setTank(id, x, /*y, */z, r, tr, br, v, ts, tts, bts) {
       
       var n = getLandscapeNormal(i);
       var q1 = new THREE.Quaternion();
-      q1.setFromAxisAngle(new THREE.Vector3(0, 1, 0), tanks[i].tankbody.rotation.y);
+      q1.setFromAxisAngle(new THREE.Vector3(0, 1, 0), tanks[i].rotation);
       var q2 = new THREE.Quaternion();
       var axis = new THREE.Vector3(0, 1, 0);
       var theta = Math.acos(axis.dot(n));
       axis.cross(n).normalize();
       q2.setFromAxisAngle(axis, theta);
       q2.multiply(q1);
-      //tanks[i].tankbody.useQuaternion = true;
-      //tanks[i].tankbody.quaternion = q2;
       tanks[i].tankbody.setRotationFromQuaternion(q2);
       break;
     }

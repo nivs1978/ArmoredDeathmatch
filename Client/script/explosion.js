@@ -1,4 +1,22 @@
-﻿var explosions = [];
+﻿/*
+This file is part of Armored Deathmatch by Hans Milling.
+
+Armored Deathmatch is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Armored Deathmatch is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Armored Deathmatch.  If not, see <http://www.gnu.org/licenses/>.
+	
+*/
+
+var explosions = [];
 
 function Explosion(x, y, z, particles, size, velocity) {
   this.x = x;
@@ -7,7 +25,7 @@ function Explosion(x, y, z, particles, size, velocity) {
   this.particles = particles;
   this.size = size;
   this.velocity = velocity;
-  this.frame = 100;
+  this.frame = 200;
   this.cubes = [];
   var material = new THREE.MeshLambertMaterial({ color: 0xFFFF00, ambient: 0xffffff });
   for (var i = 0; i < this.particles; i++) {
@@ -30,7 +48,7 @@ function Explosion(x, y, z, particles, size, velocity) {
         cube.position.x += cube.velocity.x;
         cube.position.y += cube.velocity.y;
         cube.position.z += cube.velocity.z;
-        cube.velocity.y -= 0.5;
+        cube.velocity.y -= 0.25;
       }
       this.frame--;
     }

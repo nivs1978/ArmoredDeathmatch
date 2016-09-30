@@ -1,10 +1,31 @@
-﻿using System;
+﻿/*
+    This file is part of Armored Deathmatch by Hans Milling.
+
+    Armored Deathmatch is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Armored Deathmatch is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Armored Deathmatch.  If not, see <http://www.gnu.org/licenses/>.
+	
+*/
+
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Globalization;
 
 namespace Server
 {
+  /// <summary>
+  /// The implementation of the Tank vehicle, different tanks could have different properties like movement speed or reload time. Even hitpoints (not implemented yet)
+  /// </summary>
   class VehicleTank : Vehicle
   {
     public double bodyrotation = 0;
@@ -43,6 +64,7 @@ namespace Server
       hitradius = 50;
     }
     
+    // Do all the logic/movement based on what functions/keys are active
     public override void Tick()
     {
       if (!isticking)
@@ -251,8 +273,6 @@ namespace Server
       sb.Append(";");
       sb.Append((int)position.x);
       sb.Append(";");
-/*      sb.Append((int)position.y);
-      sb.Append(";");*/
       sb.Append((int)position.z);
       sb.Append(";");
       sb.Append(String.Format(CultureInfo.InvariantCulture, "{0:0.00}", bodyrotation));
@@ -291,6 +311,7 @@ namespace Server
     public override void Wake()
     {
       Random random = new Random();
+      // Calculate new spawn point (not implemented yet)
       double d = random.NextDouble();
       double x = (d*20000.0)-10000.0;
       d = random.NextDouble();

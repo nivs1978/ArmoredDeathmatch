@@ -1,4 +1,21 @@
-﻿<!doctype html>
+﻿<!--
+    This file is part of Armored Deathmatch by Hans Milling.
+
+    Armored Deathmatch is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Armored Deathmatch is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Armored Deathmatch.  If not, see <http://www.gnu.org/licenses/>.
+	
+-->
+<!doctype html>
 <html lang="en">
 <head>
   <title>Tank dual</title>
@@ -54,21 +71,6 @@
     <img src="graphics/gear.png" alt="settings" /><img src="graphics/questionmark.png"
       alt="help" onclick="showHelp()" />
   </div>
-  <!--
-    <div id="ranges" style="position:absolute; right:0px; top:0px; width:300px; height:400px; overflow:hidden; z-index:10000; background-color:transparent; text-align: right;">
-    <table border="0" cellpadding="0" cellspacing="1">
-    <tr><td>Face:</td><td><input type="range" min="0" max="9" value="0" step="1" onchange="uvno = this.value; document.getElementById('NO').innerHTML=this.value; setSliders();" /></td><td style="width:25px"><span id="NO">0</span></td></tr>
-    <tr><td>Vertex 0 U:</td><td><input type="range" min="0" max="10" value="0" step="1" onchange="setU(uvno,0,this.value/10.0);document.getElementById('U0').innerHTML=this.value/10.0;" /></td><td><div id="U0">0</div></td></tr>
-    <tr><td>Vertex 0 V:</td><td><input type="range" min="0" max="10" value="0" step="1" onchange="setV(uvno,0,this.value/10.0);document.getElementById('V0').innerHTML=this.value/10.0;" /></td><td><span id="V0">0</span></td></tr>
-    <tr><td>Vertex 1 U:</td><td><input type="range" min="0" max="10" value="0" step="1" onchange="setU(uvno,1,this.value/10.0);document.getElementById('U1').innerHTML=this.value/10.0;" /></td><td><span id="U1">0</span></td></tr>
-    <tr><td>Vertex 1 V:</td><td><input type="range" min="0" max="10" value="0" step="1" onchange="setV(uvno,1,this.value/10.0);document.getElementById('V1').innerHTML=this.value/10.0;" /></td><td><span id="V1">0</span></td></tr>
-    <tr><td>Vertex 2 U:</td><td><input type="range" min="0" max="10" value="0" step="1" onchange="setU(uvno,2,this.value/10.0);document.getElementById('U2').innerHTML=this.value/10.0;" /></td><td><span id="U2">0</span></td></tr>
-    <tr><td>Vertex 2 V:</td><td><input type="range" min="0" max="10" value="0" step="1" onchange="setV(uvno,2,this.value/10.0);document.getElementById('V2').innerHTML=this.value/10.0;" /></td><td><span id="V2">0</span></td></tr>
-    <tr><td>Vertex 3 U:</td><td><input type="range" min="0" max="10" value="0" step="1" onchange="setU(uvno,3,this.value/10.0);document.getElementById('U3').innerHTML=this.value/10.0;" /></td><td><span id="U3">0</span></td></tr>
-    <tr><td>Vertex 3 V:</td><td><input type="range" min="0" max="10" value="0" step="1" onchange="setV(uvno,3,this.value/10.0);document.getElementById('V3').innerHTML=this.value/10.0;" /></td><td><span id="V3">0</span></td></tr>
-    </table>
-    </div>
-    -->
   <div id="infowindow" style="position: absolute; left: 0px; top: 0px; width: 100%;
     height: 140px; color: black;">
     <div>
@@ -148,15 +150,7 @@
       camera.lookAt(new THREE.Vector3(0, 0, 0));
 
       scene = new THREE.Scene();
-      //scene.fog = new THREE.FogExp2(0xffffff, 0.0025);
       scene.add(camera);
-      /*
-      var material = new THREE.MeshLambertMaterial({ color: 0xFFFFFF, ambient: 0x808080 });
-      for (var i = 0; i < 5; i++) {
-        box[i] = new THREE.Mesh(new THREE.CubeGeometry(10, 10, 10, 1, 1, 1), material);
-        scene.add(box[i]);
-      }
-      */
       // create a point light
       var pointLight = new THREE.PointLight(0xFFFFFF);
 
@@ -171,14 +165,6 @@
       ambient = new THREE.AmbientLight(0xbbbbbb);
       scene.add(ambient);
 
-      //      material = new THREE.MeshLambertMaterial({ color: 0xFFFFFF, ambient: 0x808080 });
-      /*
-      for (var i = 0; i < 5; i++) {
-      box[i] = new THREE.Mesh(new THREE.CubeGeometry(100, 100, 100, 1, 1, 1), material);
-      scene.add(box[i]);
-      }
-      */
-
       // Do the skybox
       var urlPrefix = "graphics/skybox/";
       var urls = [urlPrefix + "posx.jpg", urlPrefix + "negx.jpg",
@@ -187,7 +173,7 @@
       var textureCube = THREE.ImageUtils.loadTextureCube(urls);
 
       // Skybox shader
-      var shader = THREE.ShaderLib["cube"];  //THREE.ShaderUtils.lib["cube"];
+      var shader = THREE.ShaderLib["cube"];
       var uniforms = THREE.UniformsUtils.clone(shader.uniforms);
       uniforms['tCube'].texture = textureCube; // textureCube has been init before
       var material = new THREE.ShaderMaterial({
@@ -214,11 +200,6 @@
       requestAnimationFrame(animate);
       render();
     }
-/*
-    function sendPos() {
-  3    doSend(tanks[myid].tankbody.position.x + ";" + tanks[myid].tankbody.position.y + ";" + tanks[myid].tankbody.position.z + ";" + tanks[myid].tankbody.rotation.y + ";" + tanks[myid].tankturret.rotation.y + ";" + tanks[myid].tankbarrel.rotation.x);
-    }
-*/
     function setBox(no, x, y, z) {
       box[no].position.x = x;
       box[no].position.y = y;
@@ -227,132 +208,9 @@
 
 
     function tick() {
-/*
-      if (tanks.length > 0) {
-        if (myid >= 0) {
-          if (currentlyPressedKeys[37]) { // Left cursor key
-            tanks[myid].turnspeed -= tanks[myid].turnacceleration;
-            if (tanks[myid].turnspeed < -tanks[myid].maxturnspeed)
-              tanks[myid].turnspeed = -tanks[myid].maxturnspeed
-          } else  // If we are not turning the tank left it should stop turning
-          {
-            if (tanks[myid].turnspeed < 0) {
-              tanks[myid].turnspeed += tanks[myid].turndeceleration
-              if (tanks[myid].turnspeed > 0)
-                tanks[myid].turnspeed = 0;
-            }
-          }
-          if (currentlyPressedKeys[39]) { // Right cursor key
-            tanks[myid].turnspeed += tanks[myid].turnacceleration;
-            if (tanks[myid].turnspeed > tanks[myid].maxturnspeed)
-              tanks[myid].turnspeed = tanks[myid].maxturnspeed
-          } else  // If we are not turning the tank left it should stop turning
-          {
-            if (tanks[myid].turnspeed > 0) {
-              tanks[myid].turnspeed -= tanks[myid].turndeceleration;
-              if (tanks[myid].turnspeed < 0)
-                tanks[myid].turnspeed = 0;
-            }
-          }
-          if (currentlyPressedKeys[38]) { // Up cursor key
-            tanks[myid].velocity += tanks[myid].acceleration;
-            if (tanks[myid].velocity > tanks[myid].maxvelocity)
-              tanks[myid].velocity = tanks[myid].maxvelocity;
-          } else  // If we are not accelerating the tank it should slowley stop
-          {
-            if (tanks[myid].velocity > 0) {
-              tanks[myid].velocity -= tanks[myid].deceleration;
-              if (tanks[myid].velocity < 0)
-                tanks[myid].velocity = 0;
-            }
-          }
-          if (currentlyPressedKeys[40]) { // Down cursor key
-            tanks[myid].velocity -= tanks[myid].acceleration;
-            if (tanks[myid].velocity < -tanks[myid].maxvelocity)
-              tanks[myid].velocity = -tanks[myid].maxvelocity;
-          } else  // If we are not reversing the tank it should slowley stop reversing
-          {
-            if (tanks[myid].velocity < 0) {
-              tanks[myid].velocity += tanks[myid].deceleration;
-              if (tanks[myid].velocity > 0)
-                tanks[myid].velocity = 0;
-            }
-          }
-          if (currentlyPressedKeys[65]) { // A key, turn turet left
-            tanks[myid].turret.turnspeed -= tanks[myid].turret.turnacceleration;
-            if (tanks[myid].turret.turnspeed < -tanks[myid].turret.maxturnspeed)
-              tanks[myid].turret.turnspeed = -tanks[myid].turret.maxturnspeed
-          } else  // If we are not turning the turret left it should stop turning
-          {
-            if (tanks[myid].turret.turnspeed < 0.0) {
-              tanks[myid].turret.turnspeed += tanks[myid].turret.turndeceleration
-              if (tanks[myid].turret.turnspeed > 0.0)
-                tanks[myid].turret.turnspeed = 0.0;
-            }
-          }
-          if (currentlyPressedKeys[68]) { // D key, turn turet left
-            tanks[myid].turret.turnspeed += tanks[myid].turret.turnacceleration;
-            if (tanks[myid].turret.turnspeed > tanks[myid].turret.maxturnspeed)
-              tanks[myid].turret.turnspeed = tanks[myid].turret.maxturnspeed
-          } else  // If we are not turning the turret left it should stop turning
-          {
-            if (tanks[myid].turret.turnspeed > 0.0) {
-              tanks[myid].turret.turnspeed -= tanks[myid].turret.turndeceleration
-              if (tanks[myid].turret.turnspeed < 0.0)
-                tanks[myid].turret.turnspeed = 0.0;
-            }
-          }
-          if (currentlyPressedKeys[87]) { // W key, raise barrel
-            tanks[myid].barrel.turnspeed -= tanks[myid].barrel.turnacceleration;
-            if (tanks[myid].barrel.turnspeed < -tanks[myid].barrel.maxturnspeed)
-              tanks[myid].barrel.turnspeed = -tanks[myid].barrel.maxturnspeed;
-          } else  // If we are not turning the barrel left it should stop turning
-          {
-            if (tanks[myid].barrel.turnspeed < 0.0) {
-              tanks[myid].barrel.turnspeed += tanks[myid].barrel.turndeceleration
-              if (tanks[myid].barrel.turnspeed > 0.0)
-                tanks[myid].barrel.turnspeed = 0.0;
-            }
-          }
-          if (currentlyPressedKeys[83]) { // S key, lower barrel
-            tanks[myid].barrel.turnspeed += tanks[myid].barrel.turnacceleration;
-            if (tanks[myid].barrel.turnspeed > tanks[myid].barrel.maxturnspeed)
-              tanks[myid].barrel.turnspeed = tanks[myid].barrel.maxturnspeed;
-          } else  // If we are not turning the barrel left it should stop turning
-          {
-            if (tanks[myid].barrel.turnspeed > 0.0) {
-              tanks[myid].barrel.turnspeed -= tanks[myid].barrel.turndeceleration
-              if (tanks[myid].barrel.turnspeed < 0.0)
-                tanks[myid].barrel.turnspeed = 0.0;
-            }
-          }
-        }
-  */
-        /*
-        time = new Date().getTime();
-        delta = time - oldTime;
-        oldTime = time;
-
-        if (isNaN(delta) || delta > 1000 || delta == 0) {
-        delta = 1000 / 60;
-        }
-        */
         delta = 2;
 
         for (var id in tanks) {
-/*
-          if (tanks[id].barrel.turnspeed < 0 && tanks[id].tankbarrel.rotation.x > -tanks[id].barrel.maxturn)
-            tanks[id].tankbarrel.rotation.x += tanks[id].barrel.turnspeed * delta;
-          if (tanks[id].barrel.turnspeed > 0 && tanks[id].tankbarrel.rotation.x <= -tanks[id].barrel.minturn)
-            tanks[id].tankbarrel.rotation.x += tanks[id].barrel.turnspeed * delta;
-
-          tanks[id].tankbody.rotation.y -= tanks[id].turnspeed * delta;
-          tanks[id].tankturret.rotation.y -= tanks[id].turret.turnspeed * delta;
-          var movex = Math.sin(tanks[id].tankbody.rotation.y) * tanks[id].velocity * delta;
-          var movez = Math.cos(tanks[id].tankbody.rotation.y) * tanks[id].velocity * delta;
-          tanks[id].tankbody.position.x += movex;
-          tanks[id].tankbody.position.z += movez;
-*/
           var gridx = toHeightMapX(tanks[id].tankbody.position.x);
           var gridz = toHeightMapZ(tanks[id].tankbody.position.z);
 
@@ -360,12 +218,6 @@
         }
         
         if (myid >= 0) {
-/*
-          if (tanks[myid].tankbody.position.x < -(landscapescale - 100)) tanks[myid].tankbody.position.x = -(landscapescale - 100);
-          if (tanks[myid].tankbody.position.x > (landscapescale - 100)) tanks[myid].tankbody.position.x = (landscapescale - 100);
-          if (tanks[myid].tankbody.position.z < -(landscapescale - 100)) tanks[myid].tankbody.position.x = -(landscapescale - 100);
-          if (tanks[myid].tankbody.position.z > (landscapescale - 100)) tanks[myid].tankbody.position.z = (landscapescale - 100);
-          */
           var skidx = Math.round(toSkidmarksX(tanks[myid].tankbody.position.x));
           var skidy = Math.round(toSkidmarksZ(tanks[myid].tankbody.position.z));
           var dodraw = false;
@@ -378,7 +230,6 @@
             dodraw = true;
           }
           if (dodraw) {
-//            ctx.fillStyle = "rgba(0, 0, 0, 0.1)";
             ctx.fillStyle = "rgba(49, 49, 17, 0.1)";
             ctx.fillRect(skidx - 1, skidy - 1, 2, 2);
             texture1.needsUpdate = true;
@@ -405,19 +256,7 @@
 //    }
 
       function render() {
-      //tankbody.position.y -= tanks[myid].velocityy;
-      //tanks[myid].velocityy += gravity;
-
       var avgy = 0;
-      /*
-      var gridx = toHeightMapX(tanks[myid].tankbody.position.x);
-      var gridz = toHeightMapZ(tanks[myid].tankbody.position.z);
-
-      tanks[myid].tankbody.position.y = pointHeight(gridx, gridz) + 20;
-      */
-/*      if (tanks.length > 0) {
-        calculateQuaternions();
-      }*/
 
       if (myid >= 0) {
         var r = tanks[myid].rotation + tanks[myid].tankturret.rotation.y;
@@ -429,25 +268,6 @@
 
       renderer.render(scene, camera);
     }
-
-    /*
-    function calculateQuaternions() {
-      for (var id in tanks) {
-        var n = getLandscapeNormal(id);
-        var q1 = new THREE.Quaternion();
-        q1.setFromAxisAngle(new THREE.Vector3(0, 1, 0), tanks[id].tankbody.rotation.y);
-        var q2 = new THREE.Quaternion();
-        var axis = new THREE.Vector3(0, 1, 0);
-        var theta = Math.acos(axis.dot(n));
-        axis.cross(n).normalize();
-        q2.setFromAxisAngle(axis, theta);
-        q2.multiply(q1);
-        //tanks[i].tankbody.useQuaternion = true;
-        //tanks[i].tankbody.quaternion = q2;
-        tanks[id].tankbody.setRotationFromQuaternion(q2);
-      }
-    }*/
-
     var callback = function () {
       renderer.setSize(window.innerWidth, window.innerHeight);
       camera.aspect = window.innerWidth / window.innerHeight;

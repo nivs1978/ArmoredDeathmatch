@@ -1,4 +1,22 @@
-﻿var myname = "";
+﻿/*
+This file is part of Armored Deathmatch by Hans Milling.
+
+Armored Deathmatch is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Armored Deathmatch is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Armored Deathmatch.  If not, see <http://www.gnu.org/licenses/>.
+	
+*/
+
+var myname = "";
 var wsUri = "ws://212.242.146.168:1978/chat";
 
 function setupWebSocket() {
@@ -157,7 +175,7 @@ function processMessage(json) {
           if (bullets[i]) {
             if (bullets[i].id == msg.id) {
               obj = bullets[i].obj;
-              explosions.push(new Explotion(obj.position.x, obj.position.y, obj.position.z, 50, 10, 5));
+              explosions.push(new Explosion(obj.position.x, obj.position.y, obj.position.z, 50, 10, 5));
               bullets.splice(i, 1);
               break;
             }
@@ -187,7 +205,7 @@ function processMessage(json) {
           if (bullets[i]) {
             if (bullets[i].id == msg.bid) {
               obj = bullets[i].obj;
-              explosions.push(new Explotion(obj.position.x, obj.position.y, obj.position.z, 100, 20, 10));
+              explosions.push(new Explosion(obj.position.x, obj.position.y, obj.position.z, 100, 20, 10));
               bullets.splice(i, 1);
               break;
             }

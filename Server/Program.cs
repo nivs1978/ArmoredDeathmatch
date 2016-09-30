@@ -1,4 +1,22 @@
-﻿using System;
+﻿/*
+    This file is part of Armored Deathmatch by Hans Milling.
+
+    Armored Deathmatch is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Armored Deathmatch is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Armored Deathmatch.  If not, see <http://www.gnu.org/licenses/>.
+	
+*/
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
@@ -13,6 +31,9 @@ using System.Diagnostics;
 
 namespace Server
 {
+  /// <summary>
+  /// This is the main server class that handles all the game logic and clients connected.
+  /// </summary>
   class Server
   {
     private static int listenport = 1978;
@@ -32,7 +53,6 @@ namespace Server
     public static List<Bullet> bullets = new List<Bullet>();
     private static bool positionticking = false;
     private static bool bulletarraylocked = false;
-    //    private static byte[] testdata = { 0x81, 0x9c, 0xf8, 0xe2, 0x4c, 0xaa, 0xaa, 0x8d, 0x2f, 0xc1, 0xd8, 0x8b, 0x38, 0x8a, 0x8f, 0x8b, 0x38, 0xc2, 0xd8, 0xaa, 0x18, 0xe7, 0xb4, 0xd7, 0x6c, 0xfd, 0x9d, 0x80, 0x1f, 0xc5, 0x9b, 0x89, 0x29, 0xde };
     List<Vehicle> vehicles = new List<Vehicle>();
     private static readonly object _syncObject = new object();
 
@@ -98,22 +118,9 @@ namespace Server
               "Access-Control-Allow-Origin: " + headers["Origin"] + "\r\n" +
               "Access-Control-Allow-Credentials: true\r\n" +
               "Access-Control-Allow-Headers: content-type\r\n" +
-
-              /*"Sec-WebSocket-Origin: " + headers["Origin"] + Environment.NewLine +
-              "Sec-WebSocket-Location: ws://localhost:1978/chat" + Environment.NewLine +*/
               "\r\n";
-          /*
-           * 
-*/
           var bufferedResponse = Encoding.UTF8.GetBytes(response);
           stream.Write(bufferedResponse, 0, bufferedResponse.Length);
-          /*
-          using (var md5 = MD5.Create())
-          {
-            var handshake = md5.ComputeHash(result.ToArray());
-            stream.Write(handshake, 0, handshake.Length);
-          }
-          */
           clientsocket = client.Client;
           tcpclient = client;
           clientstream = stream;
@@ -136,6 +143,7 @@ namespace Server
       listener.Stop();
     }
 
+    // Send text to client. Either messages or updated positions of objects in the world.
     private static bool sendText(NetworkStream stream, string text)
     {
       try
@@ -167,12 +175,6 @@ namespace Server
         }
         byte[] mask = new byte[4];
         Random random = new Random();
-        /*
-              for (int i = 0; i < 4; i++)
-              {
-                mask[i] = (byte)random.Next(0, 255);
-                buffer.Add(mask[i]);
-              }*/
         for (int i = 0; i < data.Length; i++)
           buffer.Add((byte)(data[i]/* ^ mask[i % 4]*/));
         byte[] tosend = buffer.ToArray();
@@ -193,7 +195,6 @@ namespace Server
     }
     private static void ServiceClient()
     {
-      //Socket client = clientsocket;
       bool keepalive = true;
       NetworkStream stream = clientstream;
       int id = getVehicleId();
@@ -319,7 +320,6 @@ namespace Server
           }
           else
           {
-            //            string json = "{\"type\":\"join\",\"name\":\"" + name + "\"}";
             if (client.Name != null) // person already joined, nickchange
             {
               Log("* " + client.Name + " change name to " + name, ConsoleColor.DarkGreen);
@@ -370,17 +370,6 @@ namespace Server
       {
         client.vehicle.functionReleased((Vehicle.VehicleFunction)Int32.Parse(message.Substring(1)));
       }
-      else
-      {
-        string[] c = message.Split(';');
-        double x = Double.Parse(c[0], CultureInfo.InvariantCulture);
-        double y = Double.Parse(c[1], CultureInfo.InvariantCulture);
-        double z = Double.Parse(c[2], CultureInfo.InvariantCulture);
-        double r = Double.Parse(c[3], CultureInfo.InvariantCulture);
-        double tr = Double.Parse(c[4], CultureInfo.InvariantCulture);
-        double br = Double.Parse(c[5], CultureInfo.InvariantCulture);
-        //Log("<" + client.Name + "> " + message, ConsoleColor.White);
-      }
     }
 
     private static void SendToClient(Client cl, string message)
@@ -418,6 +407,8 @@ namespace Server
     }
 
     private static Random r = new Random();
+
+    // For now the AI is doing "monkey business" by pressing and releasing random keys
     private static void doAI(Vehicle v)
     {
       r.Next(1, 20);
@@ -550,7 +541,9 @@ namespace Server
         engineticker = new System.Threading.Timer(EngineTick, null, 0, 20);
         opponentticker = new System.Threading.Timer(OpponentTick, null, 0, 100);
         positionticker = new System.Threading.Timer(PositionTick, null, 0, 25);
-        Process.Start("http://localhost:52763/Client/index.html");
+#if DEBUG
+        Process.Start("http://localhost:52763/Client/index.html"); // Start the game client in the default browser
+#endif
       }
       catch (Exception ex)
       {
