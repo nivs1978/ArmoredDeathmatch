@@ -11,7 +11,7 @@ using System.Threading;
 using System.Globalization;
 using System.Diagnostics;
 
-namespace JustShootServer
+namespace Server
 {
   class Server
   {
@@ -350,12 +350,20 @@ namespace JustShootServer
         else
         {
           string[] args = message.Split(';');
-          client.vehicle.functionPressed((Vehicle.VehicleFunction)Int32.Parse(args[0].Substring(1)));
           if (client.vehicle is VehicleTank)
           {
+            for (int i = 0; i < args.Length; i++)
+            {
+              string str = args[i];
+              if (str.Length > 5)
+                str = str.Substring(0, 5);
+              Console.Write(str+"\t");
+            }
+            Console.WriteLine();
             ((VehicleTank)client.vehicle).barrelmount = new Vector3D(Double.Parse(args[1], CultureInfo.InvariantCulture), Double.Parse(args[2], CultureInfo.InvariantCulture), Double.Parse(args[3], CultureInfo.InvariantCulture));
             ((VehicleTank)client.vehicle).barreldirection = new Vector3D(Double.Parse(args[4], CultureInfo.InvariantCulture), Double.Parse(args[5], CultureInfo.InvariantCulture), Double.Parse(args[6], CultureInfo.InvariantCulture));
           }
+          client.vehicle.functionPressed((Vehicle.VehicleFunction)Int32.Parse(args[0].Substring(1)));
         }
       }
       else if (message.ToLower().StartsWith("-")) // Key up
@@ -542,6 +550,7 @@ namespace JustShootServer
         engineticker = new System.Threading.Timer(EngineTick, null, 0, 20);
         opponentticker = new System.Threading.Timer(OpponentTick, null, 0, 100);
         positionticker = new System.Threading.Timer(PositionTick, null, 0, 25);
+        Process.Start("http://localhost:52763/Client/index.html");
       }
       catch (Exception ex)
       {

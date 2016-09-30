@@ -12,6 +12,7 @@ function Tank(i, n) {
   this.turnacceleration = 0.001;
   this.turndeceleration = 0.003;
   this.maxturnspeed = 0.01;
+  this.rotation = 0;
   this.turret = {
     "turnspeed": 0.0,
     "turnacceleration": 0.001,
@@ -280,13 +281,14 @@ function setTank(id, x, /*y, */z, r, tr, br, v, ts, tts, bts) {
     //  tanks[i].tankbody.position.y = y;
       tanks[i].tankbody.position.z = z;
       tanks[i].tankbody.rotation.y = r;
+      tanks[i].rotation = r;
       tanks[i].tankturret.rotation.y = tr;
       tanks[i].tankbarrel.rotation.x = br;
       tanks[i].velocity = v;
       tanks[i].turnspeed = ts;
       tanks[i].turret.turnspeed = tts;
       tanks[i].barrel.turnspeed = bts;
-
+      
       var n = getLandscapeNormal(i);
       var q1 = new THREE.Quaternion();
       q1.setFromAxisAngle(new THREE.Vector3(0, 1, 0), tanks[i].tankbody.rotation.y);

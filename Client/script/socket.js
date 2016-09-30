@@ -157,7 +157,7 @@ function processMessage(json) {
           if (bullets[i]) {
             if (bullets[i].id == msg.id) {
               obj = bullets[i].obj;
-              explotions.push(new Explotion(obj.position.x, obj.position.y, obj.position.z, 50, 10, 5));
+              explosions.push(new Explotion(obj.position.x, obj.position.y, obj.position.z, 50, 10, 5));
               bullets.splice(i, 1);
               break;
             }
@@ -187,7 +187,7 @@ function processMessage(json) {
           if (bullets[i]) {
             if (bullets[i].id == msg.bid) {
               obj = bullets[i].obj;
-              explotions.push(new Explotion(obj.position.x, obj.position.y, obj.position.z, 100, 20, 10));
+              explosions.push(new Explotion(obj.position.x, obj.position.y, obj.position.z, 100, 20, 10));
               bullets.splice(i, 1);
               break;
             }

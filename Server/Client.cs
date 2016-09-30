@@ -4,7 +4,7 @@ using System.Net.Sockets;
 using System.Net;
 using System.Threading;
 
-namespace JustShootServer
+namespace Server
 {
   /// <summary>
   /// Summary description for Client.

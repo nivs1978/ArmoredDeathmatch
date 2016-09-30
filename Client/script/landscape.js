@@ -57,7 +57,7 @@ function getLandscapeNormal(id) {
   var vidx = [11, 10, 5, 4]; // The four vertexes in the tankbody to use as height measure points 
   var p = [];
   for (var i = 0; i < 4; i++) {
-    var r = tanks[id].tankbody.rotation.y;
+    var r = tanks[id].rotation;
     var ox = tanks[id].tankbody.geometry.vertices[vidx[i]].z;
     var oz = tanks[id].tankbody.geometry.vertices[vidx[i]].x;
     var sx = tanks[id].tankbody.position.x + Math.sin(r) * ox + Math.cos(r) * oz;

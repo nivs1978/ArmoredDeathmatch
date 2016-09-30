@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace JustShootServer
+namespace Server
 {
   public abstract class Vehicle
   {

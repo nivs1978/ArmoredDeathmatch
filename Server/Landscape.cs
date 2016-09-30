@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Globalization;
 
-namespace JustShootServer
+namespace Server
 {
   class Landscape
   {
@@ -141,7 +141,7 @@ namespace JustShootServer
 
     private double getHeight(double px, double pz, int x1, int z1, int x2, int z2, int x3, int z3)
     {
-      if (x1 > 256 || z1 > 256 || x2 > 256 || z2 > 256 || x3 > 256 || z3 > 256)
+      if (x1 > 256 || z1 > 256 || x2 > 256 || z2 > 256 || x3 > 256 || z3 > 256 || x1<0 ||x2<0||x3<0||z1<0||z2<0||z3<0)
         return 0;
       double h1 = data[x1, z1];
       double h2 = data[x2, z2];

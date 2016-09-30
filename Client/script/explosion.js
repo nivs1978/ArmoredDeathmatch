@@ -1,6 +1,6 @@
-﻿var explotions = [];
+﻿var explosions = [];
 
-function Explotion(x, y, z, particles, size, velocity) {
+function Explosion(x, y, z, particles, size, velocity) {
   this.x = x;
   this.y = y;
   this.z = z; // Get landscape height

@@ -8,7 +8,7 @@
     <ProjectGuid>{283FA757-3874-4E5A-AD33-E223D8443104}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>ADServer</RootNamespace>
+    <RootNamespace>Server</RootNamespace>
     <AssemblyName>ADServer</AssemblyName>
     <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
     <TargetFrameworkProfile>
