@@ -28,6 +28,8 @@ using System.Collections;
 using System.Threading;
 using System.Globalization;
 using System.Diagnostics;
+using System.Net.WebSockets;
+using System.Threading.Tasks;
 
 namespace Server
 {
@@ -36,7 +38,7 @@ namespace Server
   /// </summary>
   class Server
   {
-    private static int listenport = 1978;
+    private static int listenport = 8005;
     private static TcpListener listener;
     public static ArrayList clients;
     private static Thread processor;
@@ -55,6 +57,8 @@ namespace Server
     private static bool bulletarraylocked = false;
     List<Vehicle> vehicles = new List<Vehicle>();
     private static readonly object _syncObject = new object();
+    private static   readonly object clientsLock = new object();
+    private static bool _initialized = false;
 
     public static void Log(string text, ConsoleColor c)
     {
@@ -80,68 +84,7 @@ namespace Server
       return secWebSocketAccept;
     }
 
-    private static void StartListening()
-    {
-      listener = new TcpListener(IPAddress.Any, listenport);
-      listener.Start();
-      while (run)
-      {
-        try
-        {
-          TcpClient client = listener.AcceptTcpClient();
-          //Socket s = listener.AcceptSocket();
-
-          var headers = new Dictionary<string, string>();
-          string line = string.Empty;
-          NetworkStream stream = client.GetStream();
-          while ((line = ReadLine(stream)) != string.Empty)
-          {
-            var tokens = line.Split(new char[] { ':' }, 2);
-            if (line != null && line.Trim().Length > 0 && tokens.Length > 1)
-            {
-              headers[tokens[0]] = tokens[1].Trim();
-              Log(tokens[0] + ": " + tokens[1], ConsoleColor.DarkYellow);
-            }
-          }
-
-          string responsekey = ComputeWebSocketHandshakeSecurityHash09(headers["Sec-WebSocket-Key"]);
-
-          var result = new List<byte>();
-
-          var response =
-              "HTTP/1.1 101 WebSocket Protocol Handshake\r\n" +
-              "Upgrade: WebSocket\r\n" +
-              "Connection: Upgrade\r\n" +
-              "Sec-WebSocket-Accept: " + responsekey + "\r\n" +
-              "Server:  Tank Dual\r\n" +
-              "Date:  Mon, 02 Apr 2012  09:54:59 GMT\r\n" +
-              "Access-Control-Allow-Origin: " + headers["Origin"] + "\r\n" +
-              "Access-Control-Allow-Credentials: true\r\n" +
-              "Access-Control-Allow-Headers: content-type\r\n" +
-              "\r\n";
-          var bufferedResponse = Encoding.UTF8.GetBytes(response);
-          stream.Write(bufferedResponse, 0, bufferedResponse.Length);
-          clientsocket = client.Client;
-          tcpclient = client;
-          clientstream = stream;
-          clientservice = new Thread(new ThreadStart(ServiceClient));
-          clientservice.Start();
-          Log("Client connected, waiting fore name", ConsoleColor.DarkYellow);
-          Log("* sending landscape", ConsoleColor.DarkYellow);
-          sendText(stream, "{ \"type\": \"chat\", \"id\": -1, \"text\": \"Receiving landscape\"}");
-          sendText(stream, "{ \"type\": \"landscape\", \"data\": " + landscape.toJSON() + "}");
-          Log("* sending client list", ConsoleColor.DarkYellow);
-          sendText(stream, "{ \"type\": \"chat\", \"id\": -1, \"text\": \"Receiving client list\"}");
-          System.Threading.Thread.Sleep(100);
-          sendText(stream, GetClientListJSON());
-        }
-        catch (Exception e)
-        {
-          Log(e.ToString(), ConsoleColor.Red);
-        }
-      }
-      listener.Stop();
-    }
+    // WebSocket handling is done through ASP.NET Core. The old raw TcpListener is no longer used.
 
     // Send text to client. Either messages or updated positions of objects in the world.
     private static bool sendText(NetworkStream stream, string text)
@@ -153,7 +96,9 @@ namespace Server
         byte b1 = (byte)((byte)0x80 | ((byte)Frame.Opcode.Text & 0x0f));
         buffer.Add(b1);
         if (data.Length <= 125)
+        {
           buffer.Add((byte)(data.Length));
+        }
         else if (data.Length >= 126 && data.Length <= 65535)
         {
           buffer.Add(0x7E);
@@ -173,10 +118,8 @@ namespace Server
           buffer.Add(b[1]);
           buffer.Add(b[0]);
         }
-        byte[] mask = new byte[4];
-        Random random = new Random();
         for (int i = 0; i < data.Length; i++)
-          buffer.Add((byte)(data[i]/* ^ mask[i % 4]*/));
+          buffer.Add((byte)(data[i]/* ^ 0*/));
         byte[] tosend = buffer.ToArray();
         if (stream.CanWrite)
         {
@@ -193,52 +136,88 @@ namespace Server
       }
       return false;
     }
-    private static void ServiceClient()
+
+    private static void sendText(WebSocket ws, string text)
     {
-      bool keepalive = true;
-      NetworkStream stream = clientstream;
-      int id = getVehicleId();
-      Client client = new Client(id, null, System.Threading.Thread.CurrentThread, stream, Client.VehicleType.Tank);
-      clients.Add(client);
-      sendText(stream, "{ \"type\": \"id\", \"id\": " + client.Id + ", \"name\": null}");
-      while (keepalive)
+      try
       {
-        try
+        var buffer = Encoding.UTF8.GetBytes(text);
+        var seg = new ArraySegment<byte>(buffer);
+        ws.SendAsync(seg, WebSocketMessageType.Text, true, CancellationToken.None).GetAwaiter().GetResult();
+      }
+      catch (Exception ex)
+      {
+        Log(ex.ToString(), ConsoleColor.Red);
+      }
+    }
+
+    private static void sendText(Client c, string text)
+    {
+      if (c == null) return;
+      if (c.Stream != null)
+        sendText(c.Stream, text);
+      else if (c.WebSocket != null)
+        sendText(c.WebSocket, text);
+    }
+    // Handle a client connected over WebSocket (used by ASP.NET Core endpoint)
+    public static async Task HandleWebSocket(WebSocket webSocket)
+    {
+      int id = getVehicleId();
+      Client client = new Client(id, null, null, null, Client.VehicleType.Tank);
+      client.WebSocket = webSocket;
+      // Ensure server state is initialized if background Start hasn't run yet
+      if (clients == null) clients = new ArrayList();
+      if (landscape == null) landscape = new Landscape(257);
+
+      clients.Add(client);
+      // Send id and initial landscape + client list to the new client
+      sendText(client, "{ \"type\": \"id\", \"id\": " + client.Id + ", \"name\": null}");
+      sendText(client, "{ \"type\": \"chat\", \"id\": -1, \"text\": \"Receiving landscape\"}");
+      sendText(client, "{ \"type\": \"landscape\", \"data\": " + landscape.toJSON() + "}");
+      sendText(client, "{ \"type\": \"chat\", \"id\": -1, \"text\": \"Receiving client list\"}");
+      await Task.Delay(50);
+      sendText(client, GetClientListJSON());
+
+      var buffer = new byte[4096];
+      try
+      {
+        while (webSocket.State == WebSocketState.Open)
         {
-          Frame frame = new Frame(stream);
-          switch (frame.getOpcode())
+          var result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+          if (result.MessageType == WebSocketMessageType.Close)
           {
-            case Frame.Opcode.Close:
-            case Frame.Opcode.Disconnect:
-              keepalive = false;
-              break;
-            case Frame.Opcode.Text:
-              string text = frame.getText();
-              if (!string.IsNullOrEmpty(text))
-                processMessage(client, stream, text);
-              break;
+            break;
+          }
+          if (result.MessageType == WebSocketMessageType.Text)
+          {
+            var message = Encoding.UTF8.GetString(buffer, 0, result.Count);
+            if (!string.IsNullOrEmpty(message))
+              processMessage(client, message);
           }
         }
-        catch (Exception ex)
-        {
-          keepalive = false;
-          Log(ex.ToString(), ConsoleColor.Red);
-        }
       }
-      Client remove = null;
-      foreach (Client c in clients)
+      catch (Exception ex)
       {
-        if (c.CLThread == System.Threading.Thread.CurrentThread)
+        Log(ex.ToString(), ConsoleColor.Red);
+      }
+
+      Client remove = null;
+      lock (clientsLock)
+      {
+        foreach (Client c in clients)
         {
-          remove = c;
-          break;
+          if (c.WebSocket == webSocket)
+          {
+            remove = c;
+            break;
+          }
         }
       }
       if (remove != null)
       {
-        remove.Stream.Close();
+        try { remove.WebSocket?.Abort(); } catch { }
         clients.Remove(remove);
-        sendToAllClients(client, "{ \"type\": \"quit\", \"id\": \"" + remove.Id + "\"}");
+        sendToAllClients(remove, "{ \"type\": \"quit\", \"id\": \"" + remove.Id + "\"}");
         Log("* " + remove.Name + " quit", ConsoleColor.Blue);
       }
     }
@@ -273,11 +252,11 @@ namespace Server
       for (int n = 0; n < clients.Count; n++)
       {
         Client cl = (Client)clients[n];
-        if ((c == null || cl.Id != c.Id) && cl.Stream != null) // Do not send message to self or one that has no name
+        if ((c == null || cl.Id != c.Id) && (cl.Stream != null || cl.WebSocket != null)) // Do not send message to self or one that has no name
         {
           try
           {
-            sendText(cl.Stream, json);
+            sendText(cl, json);
           }
           catch (Exception ex)
           {
@@ -297,7 +276,7 @@ namespace Server
       }
     }
 
-    private static void processMessage(Client client, NetworkStream stream, string message)
+    private static void processMessage(Client client, string message)
     {
       if (message.ToLower().StartsWith("/"))
       {
@@ -305,17 +284,20 @@ namespace Server
         {
           string name = message.Substring(6);
           bool nametaken = false;
-          foreach (Client c in clients)
+          lock (clientsLock)
           {
-            if (client.Name != null && c.Name.ToLower().CompareTo(name.ToLower()) == 0)
+            foreach (Client c in clients)
             {
-              nametaken = true;
-              break;
+              if (client.Name != null && c.Name.ToLower().CompareTo(name.ToLower()) == 0)
+              {
+                nametaken = true;
+                break;
+              }
             }
           }
           if (nametaken)
           {
-            sendText(stream, "{ \"type\": \"error\", \"text\": \"Nickname already in use\"}");
+            sendText(client, "{ \"type\": \"error\", \"text\": \"Nickname already in use\"}");
             Log("* Name " + name + " taken", ConsoleColor.DarkYellow);
           }
           else
@@ -330,16 +312,16 @@ namespace Server
             {
               client.Name = name;
               Log("* " + name + "(" + client.Id + ") joined", ConsoleColor.DarkGreen);
-              sendText(stream, "{ \"type\": \"chat\", \"id\": -1, \"text\": \"Name accepted\"}");
-              sendText(stream, "{ \"type\": \"id\", \"id\": " + client.Id + ", \"name\": \"" + name + "\"}");
+              sendText(client, "{ \"type\": \"chat\", \"id\": -1, \"text\": \"Name accepted\"}");
+              sendText(client, "{ \"type\": \"id\", \"id\": " + client.Id + ", \"name\": \"" + name + "\"}");
               sendToAllClients(client, "{ \"type\": \"join\", \"id\": " + client.Id + ", \"name\": \"" + name + "\"}");
               client.vehicle.Wake();
             }
           }
         }
-        else
+          else
         {
-          sendText(stream, "{ \"type\": \"error\", \"text\": \"Unknown command: " + message + "\"}");
+          sendText(client, "{ \"type\": \"error\", \"text\": \"Unknown command: " + message + "\"}");
           Log("* error: " + message, ConsoleColor.Red);
         }
       }
@@ -376,12 +358,13 @@ namespace Server
     {
       try
       {
-        sendText(cl.Stream, message);
+        sendText(cl, message);
       }
       catch
       {
-        cl.Stream.Close();
-        cl.CLThread.Abort();
+        try { cl.Stream?.Close(); } catch { }
+        try { cl.WebSocket?.Abort(); } catch { }
+        try { cl.CLThread?.Abort(); } catch { }
         clients.Remove(cl);
         sendToAllClients(null, "{ \"type\": \"quit\", \"id\": \"" + cl.Id + "\"}");
         Log("* " + cl.Name + " quit", ConsoleColor.Blue);
@@ -429,29 +412,32 @@ namespace Server
       if (!engineticking)
       {
         engineticking = true;
-        foreach (Client c in clients)
+        lock (clientsLock)
         {
-          if (!c.vehicle.isDead())
-            c.vehicle.Tick();
-          else
+          foreach (Client c in clients)
           {
-            long now = DateTime.Now.Ticks;
-            now = now - c.vehicle.diedTime();
-            now = now / TimeSpan.TicksPerSecond;
-            if (now > 10)
+            if (!c.vehicle.isDead())
+              c.vehicle.Tick();
+            else
             {
+              long now = DateTime.Now.Ticks;
+              now = now - c.vehicle.diedTime();
+              now = now / TimeSpan.TicksPerSecond;
+              if (now > 10)
+              {
 
+              }
             }
-          }
-          if (c.Stream != null)
-          {
-            /*VehicleTank vt = (VehicleTank)autos[0];
-            VehicleTank v = (VehicleTank)c.vehicle;
-            vt.set(v.position.x, v.position.y, v.position.z, v.bodyrotation, v.turretrotation, v.barrelrotation);*/
-          }
-          else
-          {
-            doAI(c.vehicle);
+            if (c.Stream != null || c.WebSocket != null)
+            {
+              /*VehicleTank vt = (VehicleTank)autos[0];
+              VehicleTank v = (VehicleTank)c.vehicle;
+              vt.set(v.position.x, v.position.y, v.position.z, v.bodyrotation, v.turretrotation, v.barrelrotation);*/
+            }
+            else
+            {
+              doAI(c.vehicle);
+            }
           }
         }
         if (!bulletarraylocked)
@@ -465,13 +451,16 @@ namespace Server
               sendToAllClients(null, "{ \"type\": \"bhit\", \"id\": " + bullets[i].id + ", \"x\": " + bullets[i].position.x.ToString(CultureInfo.InvariantCulture) + ", \"z\": " + bullets[i].position.z.ToString(CultureInfo.InvariantCulture) + "}");
               remove.Add(i);
             }
-            foreach (Client c in clients)
+            lock (clientsLock)
             {
-              if (bullets[i].hitVehicle(c.vehicle))
+              foreach (Client c in clients)
               {
-                sendToAllClients(null, "{ \"type\": \"vhit\", \"bid\": " + bullets[i].id + ", \"vid\": " + c.vehicle.id + "}");
-                c.vehicle.Kill();
-                remove.Add(i);
+                if (bullets[i].hitVehicle(c.vehicle))
+                {
+                  sendToAllClients(null, "{ \"type\": \"vhit\", \"bid\": " + bullets[i].id + ", \"vid\": " + c.vehicle.id + "}");
+                  c.vehicle.Kill();
+                  remove.Add(i);
+                }
               }
             }
           }
@@ -492,10 +481,13 @@ namespace Server
       if (!positionticking)
       {
         positionticking = true;
-        foreach (Client c in clients)
+        lock (clientsLock)
         {
-          if (c.Name != null)
-            sendToAllClients(c, c.vehicle.toJSON());
+          foreach (Client c in clients)
+          {
+            if (c.Name != null)
+              sendToAllClients(c, c.vehicle.toJSON());
+          }
         }
         bulletarraylocked = true;
         foreach (Bullet b in bullets)
@@ -514,22 +506,25 @@ namespace Server
 
     private static void PositionTick(object state)
     {
-      foreach (Client c in clients)
+      lock (clientsLock)
       {
-        if (c.Stream != null)
-          sendText(c.Stream, c.vehicle.toJSON());
+        foreach (Client c in clients)
+        {
+          if (c.Stream != null || c.WebSocket != null)
+            sendText(c, c.vehicle.toJSON());
+        }
       }
     }
 
-    static void Main(string[] args)
+    public static void Start(System.Threading.CancellationToken cancellationToken)
     {
       try
       {
-        landscape = new Landscape(257);
-        clients = new ArrayList();
-        processor = new Thread(new ThreadStart(StartListening));
-        processor.Start();
-        
+        EnsureInitialized();
+        run = true;
+        // EnsureInitialized already called; do not recreate landscape/clients here
+        // No raw TcpListener thread; WebSocket connections are accepted via ASP.NET /chat endpoint.
+
         for (int i = 1; i < 5; i++)
         {
           int id = getVehicleId();
@@ -537,13 +532,25 @@ namespace Server
           c.vehicle.Wake();
           clients.Add(c);
         }
-         
+
         engineticker = new System.Threading.Timer(EngineTick, null, 0, 20);
         opponentticker = new System.Threading.Timer(OpponentTick, null, 0, 100);
         positionticker = new System.Threading.Timer(PositionTick, null, 0, 25);
+
 #if DEBUG
-        Process.Start("http://localhost:52763/Client/index.html"); // Start the game client in the default browser
+        try { Process.Start("http://localhost:8005/"); } catch { }
 #endif
+
+        // Wait until cancellation is requested
+        while (!cancellationToken.IsCancellationRequested)
+        {
+          System.Threading.Thread.Sleep(200);
+        }
+
+        // Begin shutdown
+        run = false;
+        try { listener?.Stop(); } catch { }
+        try { engineticker?.Dispose(); opponentticker?.Dispose(); positionticker?.Dispose(); } catch { }
       }
       catch (Exception ex)
       {
@@ -564,6 +571,14 @@ namespace Server
           return line.Substring(0, line.Length - 2);
         }
       }
+    }
+
+    private static void EnsureInitialized()
+    {
+      if (_initialized) return;
+      _initialized = true;
+      if (clients == null) clients = new ArrayList();
+      if (landscape == null) landscape = new Landscape(257);
     }
   }
 }

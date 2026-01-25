@@ -32,6 +32,7 @@ namespace Server
     private Thread clthread;
     private string name;
     private NetworkStream stream;
+    private System.Net.WebSockets.WebSocket websocket;
     public Vehicle vehicle;
     int id;
 
@@ -86,6 +87,12 @@ namespace Server
     {
       get { return stream; }
       set { stream = value; }
+    }
+
+    public System.Net.WebSockets.WebSocket WebSocket
+    {
+      get { return websocket; }
+      set { websocket = value; }
     }
   }
 }

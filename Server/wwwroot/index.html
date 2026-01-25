@@ -1,0 +1,338 @@
+﻿<!--
+    This file is part of Armored Deathmatch by Hans Milling.
+
+    Armored Deathmatch is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Armored Deathmatch is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Armored Deathmatch.  If not, see <http://www.gnu.org/licenses/>.
+	
+-->
+<!doctype html>
+<html lang="en">
+<head>
+  <title>Armored Deathmatch</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
+  <style type="text/css">
+    body
+    {
+      color: #71544e;
+      font-family: Monospace;
+      font-size: 13px;
+      text-align: center;
+      background-color: #bfd1e5;
+      margin: 0px;
+      overflow: hidden;
+    }
+    
+    #info
+    {
+      position: absolute;
+      top: 0px;
+      width: 100%;
+      padding: 5px;
+    }
+    
+    a
+    {
+      color: #b07861;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    <br />
+    Generating...</div>
+  <div id="clientlist" style="position: absolute; right: 0px; top: 0px; width: 200px;
+    height: 400px; overflow: hidden; z-index: 10000; background-color: transparent;
+    text-shadow: #ffffff 0px 0px 2px; color: Red; text-align: left;">
+  </div>
+  <div id="messages" style="position: absolute; left: 0px; top: 0px; width: 200px;
+    height: 400px; overflow: hidden; z-index: 10000; background-color: transparent;
+    text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black; color: Red;
+    text-align: left;">
+  </div>
+  <div id="icons" style="position: absolute; right: 0px; top: 0px; width: 96px; height: 48px;
+    overflow: hidden; z-index: 10001; background-color: transparent; color: Black;">
+    <img src="graphics/gear.png" alt="settings" /><img src="graphics/questionmark.png"
+      alt="help" onclick="showHelp()" />
+  </div>
+  <div id="infowindow" style="position: absolute; left: 0px; top: 0px; width: 100%;
+    height: 140px; color: black;">
+    <div>
+    </div>
+    <div id="help" style="background-image: url(graphics/t80.png); background-repeat:repeat; display:none;">
+      Welcome to this small tank game in development<br />
+      <img src="graphics/wasdkeys.png" alt="" />&nbsp;<img src="graphics/arrowkeys.png"
+        alt="" />
+      <br />
+      Things to come:<br />
+      - Gravity<br />
+      - Different vehicles<br />
+      - Use of mouse to turn camera/turret and shooting<br />
+      - Full screen<br />
+      - Remap keys (Got complaints from french people that WASD are bad keys)<br />
+      - Cookies to store your name and key setup<br />
+    </div>
+  </div>
+  <div id="backdiv" style="background-color: #000000; opacity: 0.8; filter: alpha(opacity=80);
+    position: absolute; top: 0px; left: 0px; width: 100%; height: 100%; display: none;
+    z-index: 20000">
+  </div>
+  <div id="setnamediv" style="position: absolute; left: 50%; top: 50%; margin-left: -400px; margin-top: -50px; width: 800px; height: 100px; text-align: center; display: none; z-index: 20001">
+    <img src="graphics/armoreddeathmatch.png" alt ="ArmoredDeathmatch" />
+    Enter your name<br />
+    <input id="typename" type="text" value="Guest" onkeyup="return isEnterKey(event);" /><br />
+    <div id="namemsg" style="color: red">
+    </div>
+  </div>
+  <audio id="intromusic">
+   <source src="audio/When_Johnny_Comes_Marching_Home.ogg" type="audio/ogg" />
+  </audio>
+  <script src="script/landscape.js" type="text/javascript"></script>
+  <script src="script/keyboard.js" type="text/javascript"></script>
+  <script src="script/tank.js" type="text/javascript"></script>
+  <script src="script/bullet.js" type="text/javascript"></script>
+  <script src="script/socket.js" type="text/javascript"></script>
+  <script src="script/three.js" type="text/javascript"></script>
+  <script src="script/gui.js" type="text/javascript"></script>
+  <script src="script/explosion.js" type="text/javascript"></script>
+  <script type="text/javascript">
+    var namemsgdiv;
+    var container;
+    var camera, scene, renderer, texture, ambient, landscape;
+    var time, delta, oldTime;
+    var messagesdiv = document.getElementById("messages");
+    var typenamediv = document.getElementById("typename");
+    var clientlistdiv = document.getElementById("clientlist");
+    var help = document.getElementById("help");
+    var myid = -1;
+    var uvno = 0;
+    var box = new Array();
+    var oldskidx = -1;
+    var oldskidy = -1;
+    var mesh;
+
+    var windowHalfX = window.innerWidth / 2;
+    var windowHalfY = window.innerHeight / 2;
+
+    init();
+
+    function showHelp() {
+      help.style.display = "";
+      setTimeout("fade('help');", 5000);
+    }
+
+    function init() {
+      namemsgdiv = document.getElementById("namemsg");
+      setupWebSocket();
+
+      container = document.getElementById('container');
+
+      camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 10, 100000);
+      camera.position.x = 1; // Initial start the camera is overviewing the entire map.
+      camera.position.y = 15000;
+      camera.position.z = 0;
+      camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+      scene = new THREE.Scene();
+      scene.add(camera);
+      // create a point light
+      var pointLight = new THREE.PointLight(0xFFFFFF);
+
+      // set its position
+      pointLight.position.x = 1000;
+      pointLight.position.y = 1000;
+      pointLight.position.z = 1000;
+
+      // add to the scene
+      scene.add(pointLight);
+
+      ambient = new THREE.AmbientLight(0xbbbbbb);
+      scene.add(ambient);
+
+      // Do the skybox
+      var urlPrefix = "graphics/skybox/";
+      var urls = [urlPrefix + "posx.jpg", urlPrefix + "negx.jpg",
+    urlPrefix + "posy.jpg", urlPrefix + "negy.jpg",
+    urlPrefix + "posz.jpg", urlPrefix + "negz.jpg"];
+      var textureCube = THREE.ImageUtils.loadTextureCube(urls);
+
+      // Skybox shader
+      var shader = THREE.ShaderLib["cube"];
+      var uniforms = THREE.UniformsUtils.clone(shader.uniforms);
+      uniforms['tCube'].texture = textureCube; // textureCube has been init before
+      var material = new THREE.ShaderMaterial({
+        fragmentShader: shader.fragmentShader,
+        vertexShader: shader.vertexShader,
+        uniforms: uniforms
+      });
+
+      // build the skybox Mesh 
+      skyboxMesh = new THREE.Mesh(new THREE.BoxGeometry(100000, 100000, 100000, 1, 1, 1, null, true), material);
+      skyboxMesh.doubleSided = true;
+      // add it to the scene
+      scene.add(skyboxMesh);
+
+      renderer = new THREE.WebGLRenderer();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+
+      container.innerHTML = "";
+
+      container.appendChild(renderer.domElement);
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      render();
+    }
+    function setBox(no, x, y, z) {
+      box[no].position.x = x;
+      box[no].position.y = y;
+      box[no].position.z = z;
+    }
+
+
+    function tick() {
+        delta = 2;
+
+        for (var id in tanks) {
+          var gridx = toHeightMapX(tanks[id].tankbody.position.x);
+          var gridz = toHeightMapZ(tanks[id].tankbody.position.z);
+
+          tanks[id].tankbody.position.y = pointHeight(gridx, gridz) + 20;
+        }
+        
+        if (myid >= 0) {
+          var skidx = Math.round(toSkidmarksX(tanks[myid].tankbody.position.x));
+          var skidy = Math.round(toSkidmarksZ(tanks[myid].tankbody.position.z));
+          var dodraw = false;
+          if (oldskidx != skidx) {
+            oldskidx = skidx;
+            dodraw = true;
+          }
+          if (oldskidy != skidy) {
+            oldskidy = skidy;
+            dodraw = true;
+          }
+          if (dodraw) {
+            ctx.fillStyle = "rgba(49, 49, 17, 0.1)";
+            ctx.fillRect(skidx - 1, skidy - 1, 2, 2);
+            texture1.needsUpdate = true;
+          }
+        }
+        
+        for (var id in bullets) {
+          bullets[id].obj.position.x += bullets[id].velocity.x;
+          bullets[id].obj.position.y += bullets[id].velocity.y;
+          bullets[id].obj.position.z += bullets[id].velocity.z;
+        }
+
+        for (var i = explosions.length - 1; i >= 0; i--) {
+          var exp = explosions[i];
+          exp.tick();
+          if (exp.frame <= 0) {
+            for (var j = 0; j < exp.particles; j++) {
+              scene.remove(exp.cubes[j]);
+            }
+            explosions.splice(i, 1);
+          }
+        }
+      }
+//    }
+
+      function render() {
+      var avgy = 0;
+
+      if (myid >= 0) {
+        var r = tanks[myid].rotation + tanks[myid].tankturret.rotation.y;
+        camera.position.x = tanks[myid].tankbody.position.x - Math.sin(r) * 200;
+        camera.position.z = tanks[myid].tankbody.position.z - Math.cos(r) * 200;
+        camera.position.y = tanks[myid].tankbody.position.y + 100 + (200 * tanks[myid].tankbarrel.rotation.x);
+        camera.lookAt(tanks[myid].tankbody.position);
+      }
+
+      renderer.render(scene, camera);
+    }
+    var callback = function () {
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+    }
+
+    window.addEventListener('resize', callback, false);
+  </script>
+</body>
+</html>
+<!--
+
+Full screen
+
+var el = document.documentElement
+    , rfs = // for newer Webkit and Firefox
+           el.requestFullScreen
+        || el.webkitRequestFullScreen
+        || el.mozRequestFullScreen
+
+        || el.msRequestFullScreen
+;
+if(typeof rfs!="undefined" && rfs){
+  rfs.call(el);
+} else if(typeof window.ActiveXObject!="undefined"){
+  // for Internet Explorer
+  var wscript = new ActiveXObject("WScript.Shell");
+  if (wscript!=null) {
+     wscript.SendKeys("{F11}");
+  }
+}
+
+
+line intersects plane.
+
+
+var controller = new THREE.Object3D();
+var gui = new DAT.GUI({width: 160});
+
+controller.setCurrent = function(current) {
+  this.current = current;
+  this.x.setValue(current.position.x);
+  this.y.setValue(current.position.y);
+  this.z.setValue(current.position.z);
+};
+      
+controller.x = gui.add(controller.position, 'x').onChange(function(v){
+  controller.current.position.x = v;
+});
+
+
+var projector = new THREE.Projector();
+window.addEventListener('mousedown', function (ev){
+  if (ev.target == renderer.domElement) {
+    var x = ev.clientX;
+    var y = ev.clientY;
+    var v = new THREE.Vector3((x/width)*2-1, -(y/height)*2+1, 0.5);
+    projector.unprojectVector(v, camera);
+    var ray = new THREE.Ray(camera.position, 
+                            v.subSelf(camera.position).normalize());
+    var intersects = ray.intersectObjects(controller.objects);
+    if (intersects.length > 0) {
+      controller.setCurrent(intersects[0].object);
+    }
+  }
+}, false);
+
+-->
