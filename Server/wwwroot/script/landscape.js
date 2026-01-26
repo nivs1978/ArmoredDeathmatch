@@ -19,6 +19,7 @@ along with Armored Deathmatch.  If not, see <http://www.gnu.org/licenses/>.
 var landscapescale = 20000;
 var lsize = 256;
 var texture1;
+var textureLoader = new THREE.TextureLoader();
 
 var skidmarkscanvas = document.createElement('canvas');
 skidmarkscanvas.width = 1024;
@@ -38,15 +39,15 @@ function addLandscape(ls) {
   texture1 = new THREE.Texture(skidmarkscanvas);
   texture1.needsUpdate = true;
 
-  var texture2 = THREE.ImageUtils.loadTexture("graphics/landscape.jpg");
+  var texture2 = textureLoader.load("graphics/landscape.jpg");
   texture2.repeat.x = 32;
   texture2.repeat.y = 32;
   texture2.wrapT = THREE.RepeatWrapping;
   texture2.wrapS = THREE.RepeatWrapping;
   texture2.needsUpdate = true;
 
-  var material1 = new THREE.MeshLambertMaterial({ ambient: 0xffffff, transparent: true, map: texture1 });
-  var material2 = new THREE.MeshLambertMaterial({ ambient: 0xffffff, map: texture2 });
+    var material1 = new THREE.MeshLambertMaterial({ emissive: 0x000000, transparent: true, map: texture1 });
+    var material2 = new THREE.MeshLambertMaterial({ emissive: 0x000000, map: texture2 });
 /*  material1.polygonOffset = true;
   material1.polygonOffsetFactor = -1;*/
 /*  material1.depthTest = false;

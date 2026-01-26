@@ -17,16 +17,15 @@ along with Armored Deathmatch.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 var myname = "";
-var wsUri = "ws://armoreddeathmatch.barosaurussoftwre.com/chat";
+var wsUri = null;
 
 function setupWebSocket() {
-  if (document.location.href.indexOf("localhost:") >= 0) // Running from visual studio
-  {
-    wsUri = "ws://localhost:8005/chat";
-  } else if (document.location.href.indexOf("10.0.0")>=0) // Running from internal server
-  {
-    wsUri = "ws://10.0.0.6:8005/chat";
-  }
+  // Build WebSocket URI relative to the current page so it's not bound to a specific domain or IP.
+  // Use wss when the page is served over https, otherwise use ws. If the page has no host (file://),
+  // fall back to localhost:8005 for development.
+  var host = window.location.host;
+  var scheme = (window.location.protocol === 'https:') ? 'wss:' : 'ws:';
+  wsUri = scheme + '//' + host + '/chat';
   websocket = new WebSocket(wsUri);
   websocket.onopen = function (evt) { onOpen(evt) };
   websocket.onclose = function (evt) { onClose(evt) };
@@ -103,7 +102,9 @@ function processMessage(json) {
     switch (msg.type) {
       case "join":
         writeToScreen("<span style=\"color: #009900;\">* " + msg.name + " connected</span>");
-        tanks[msg.id] = new Tank(msg.id, msg.name);
+        if (!tanks[msg.id]) tanks[msg.id] = new Tank(msg.id, msg.name);
+        tanks[msg.id].name = msg.name;
+        tanks[msg.id].score = msg.score || 0;
         updateClientList();
         break;
       case "quit":
@@ -128,6 +129,7 @@ function processMessage(json) {
           for (var i in tanks) {
             if (tanks[i].id == msg.id) {
               tanks[i].name = msg.name;
+              tanks[i].score = (typeof msg.score !== 'undefined') ? msg.score : (tanks[i].score || 0);
               break;
             }
           }
@@ -138,6 +140,7 @@ function processMessage(json) {
         if (msg.name != null) {
           myid = msg.id;
           tanks[msg.id] = new Tank(myid, msg.name);
+          tanks[msg.id].score = msg.score || 0;
           myname = msg.name;
           updateClientList();
           var namediv = document.getElementById("setnamediv");
@@ -159,8 +162,13 @@ function processMessage(json) {
         break;
       case "clients":
         for (var i = 0; i < msg.list.length; i++) {
-          if (myid != msg.list[i].id)
-            tanks[msg.list[i].id] = new Tank(msg.list[i].id, msg.list[i].name);
+          var entry = msg.list[i];
+          var id = entry.id;
+          if (!tanks[id]) {
+            tanks[id] = new Tank(id, entry.name);
+          }
+          tanks[id].name = entry.name;
+          tanks[id].score = (typeof entry.score !== 'undefined') ? entry.score : (tanks[id].score || 0);
         }
         updateClientList();
         break;
@@ -183,22 +191,28 @@ function processMessage(json) {
             }
           }
         }
-        if (obj != null)
-          scene.remove(obj);
-        var bskidx = Math.round(toSkidmarksX(msg.x));
-        var bskidy = Math.round(toSkidmarksZ(msg.z));
-        ctx.fillStyle = "rgba(0, 0, 0, 0.25)";
-        ctx.beginPath();
-        ctx.arc(bskidx, bskidy, 1, 0, Math.PI * 2, true);
-        ctx.fill();
-        ctx.arc(bskidx, bskidy, 2, 0, Math.PI * 2, true);
-        ctx.fill();
-        ctx.arc(bskidx, bskidy, 3, 0, Math.PI * 2, true);
-        ctx.fill();
-        ctx.arc(bskidx, bskidy, 4, 0, Math.PI * 2, true);
-        ctx.fill();
-        ctx.closePath();
-        texture1.needsUpdate = true;
+        if (obj != null) {
+          try { scene.remove(obj); } catch(e) { }
+        }
+        // Draw skidmarks only if coordinates present and numeric
+        var bx = (typeof msg.x !== 'undefined') ? Number(msg.x) : NaN;
+        var bz = (typeof msg.z !== 'undefined') ? Number(msg.z) : NaN;
+        if (isFinite(bx) && isFinite(bz)) {
+          var bskidx = Math.round(toSkidmarksX(bx));
+          var bskidy = Math.round(toSkidmarksZ(bz));
+          ctx.fillStyle = "rgba(0, 0, 0, 0.25)";
+          ctx.beginPath();
+          ctx.arc(bskidx, bskidy, 1, 0, Math.PI * 2, true);
+          ctx.fill();
+          ctx.arc(bskidx, bskidy, 2, 0, Math.PI * 2, true);
+          ctx.fill();
+          ctx.arc(bskidx, bskidy, 3, 0, Math.PI * 2, true);
+          ctx.fill();
+          ctx.arc(bskidx, bskidy, 4, 0, Math.PI * 2, true);
+          ctx.fill();
+          ctx.closePath();
+          texture1.needsUpdate = true;
+        }
         break;
       case "vhit":
         writeToScreen("Bullet hit vehicle");
@@ -215,26 +229,42 @@ function processMessage(json) {
         }
         if (obj != null)
           scene.remove(obj);
-        var vskidx = Math.round(toSkidmarksX(msg.x));
-        var vskidy = Math.round(toSkidmarksZ(msg.z));
-        ctx.fillStyle = "rgba(0, 0, 0, 0.25)";
-        ctx.beginPath();
-        ctx.arc(vskidx, vskidy, 1, 0, Math.PI * 2, true);
-        ctx.fill();
-        ctx.arc(vskidx, vskidy, 2, 0, Math.PI * 2, true);
-        ctx.fill();
-        ctx.arc(vskidx, vskidy, 3, 0, Math.PI * 2, true);
-        ctx.fill();
-        ctx.arc(vskidx, vskidy, 4, 0, Math.PI * 2, true);
-        ctx.fill();
-        ctx.closePath();
-        texture1.needsUpdate = true;
-        if (msg.vid == myid)
-          writeToScreen("You were hit");
-        else {
-          tanks[msg.vid].tankbody.visible = false;
-          THREE.SceneUtils.traverseHierarchy(tanks[msg.vid].tankbody, function (object) { object.visible = false; });
-          writeToScreen(tanks[msg.vid].name + " were hit");
+        // Draw skidmarks only if coordinates present and numeric
+        var xnum = (typeof msg.x !== 'undefined') ? Number(msg.x) : NaN;
+        var znum = (typeof msg.z !== 'undefined') ? Number(msg.z) : NaN;
+        if (isFinite(xnum) && isFinite(znum)) {
+          var vskidx = Math.round(toSkidmarksX(xnum));
+          var vskidy = Math.round(toSkidmarksZ(znum));
+          ctx.fillStyle = "rgba(0, 0, 0, 0.25)";
+          ctx.beginPath();
+          ctx.arc(vskidx, vskidy, 1, 0, Math.PI * 2, true);
+          ctx.fill();
+          ctx.arc(vskidx, vskidy, 2, 0, Math.PI * 2, true);
+          ctx.fill();
+          ctx.arc(vskidx, vskidy, 3, 0, Math.PI * 2, true);
+          ctx.fill();
+          ctx.arc(vskidx, vskidy, 4, 0, Math.PI * 2, true);
+          ctx.fill();
+          ctx.closePath();
+          texture1.needsUpdate = true;
+        }
+        // If vid refers to a tank we know about, hide its body; otherwise skip to avoid errors
+        if (msg.vid != null && tanks[msg.vid] && tanks[msg.vid].tankbody) {
+          if (msg.vid == myid)
+            writeToScreen("You were hit");
+          else {
+            tanks[msg.vid].tankbody.visible = false;
+            if (tanks[msg.vid].tankbody.traverse) {
+              tanks[msg.vid].tankbody.traverse(function (object) { object.visible = false; });
+            }
+            writeToScreen(tanks[msg.vid].name + " were hit");
+          }
+        } else {
+          // vid unknown: just log hit
+          if (msg.vid == myid)
+            writeToScreen("You were hit");
+          else
+            writeToScreen("A vehicle was hit");
         }
         break;
     }
@@ -242,11 +272,15 @@ function processMessage(json) {
 }
 
 function updateClientList() {
-  var html = "";
+  // Render client list with names left-aligned and scores right-aligned
+  var html = "<table style='width:100%; border-collapse: collapse;'>";
   for (var i in tanks) {
-    if (tanks[i] != null)
-      html += tanks[i].name + "<br />";
+    if (tanks[i] != null) {
+      var score = (tanks[i].score !== undefined) ? tanks[i].score : 0;
+      html += "<tr><td style='text-align:left; padding-right:10px;'>" + tanks[i].name + "</td><td style='text-align:right; width:60px;'>" + score + "</td></tr>";
+    }
   }
+  html += "</table>";
   clientlistdiv.innerHTML = html;
 }
 

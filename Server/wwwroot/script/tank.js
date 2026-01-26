@@ -17,6 +17,8 @@ along with Armored Deathmatch.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 var tanks = [];
+// Use TextureLoader instead of deprecated ImageUtils.loadTexture
+var textureLoader = new THREE.TextureLoader();
 function Tank(i, n) {
   this.id = i;
   this.name = n;
@@ -46,12 +48,12 @@ function Tank(i, n) {
     "maxturn": 0.3
   };
 
-  var tankbodyleft = new THREE.MeshLambertMaterial({ color: 0xffffff, map: THREE.ImageUtils.loadTexture('textures/m1_body_left.png'), ambient: 0x333333 });
-  var tankbodyrigh = new THREE.MeshLambertMaterial({ color: 0xffffff, map: THREE.ImageUtils.loadTexture('textures/m1_body_right.png'), ambient: 0x333333 });
-  var tankbodytop = new THREE.MeshLambertMaterial({ color: 0xffffff, map: THREE.ImageUtils.loadTexture('textures/m1_body_top.png'), ambient: 0x3333333 });
-  var tankbodybottom = new THREE.MeshLambertMaterial({ color: 0xffffff, map: THREE.ImageUtils.loadTexture('textures/m1_body_bottom.png'), ambient: 0x333333 });
-  var tankbodyfront = new THREE.MeshLambertMaterial({ color: 0xffffff, map: THREE.ImageUtils.loadTexture('textures/m1_body_front.png'), ambient: 0x333333 });
-  var tankbodyback = new THREE.MeshLambertMaterial({ color: 0xffffff, map: THREE.ImageUtils.loadTexture('textures/m1_body_back.png'), ambient: 0x333333 });
+    var tankbodyleft = new THREE.MeshLambertMaterial({ color: 0xffffff, map: textureLoader.load('textures/m1_body_left.png'), emissive: 0x000000 });
+    var tankbodyrigh = new THREE.MeshLambertMaterial({ color: 0xffffff, map: textureLoader.load('textures/m1_body_right.png'), emissive: 0x000000 });
+    var tankbodytop = new THREE.MeshLambertMaterial({ color: 0xffffff, map: textureLoader.load('textures/m1_body_top.png'), emissive: 0x000000 });
+    var tankbodybottom = new THREE.MeshLambertMaterial({ color: 0xffffff, map: textureLoader.load('textures/m1_body_bottom.png'), emissive: 0x000000 });
+    var tankbodyfront = new THREE.MeshLambertMaterial({ color: 0xffffff, map: textureLoader.load('textures/m1_body_front.png'), emissive: 0x000000 });
+    var tankbodyback = new THREE.MeshLambertMaterial({ color: 0xffffff, map: textureLoader.load('textures/m1_body_back.png'), emissive: 0x000000 });
   var bodymaterials = [
     tankbodyleft,   // Left side
     tankbodyrigh,   // Right side
@@ -157,12 +159,12 @@ function Tank(i, n) {
   
   // Tank turret;
 
-  var tankturretleft = new THREE.MeshLambertMaterial({ color: 0xffffff, map: THREE.ImageUtils.loadTexture('textures/m1_turret_left.png'), ambient: 0x333333 });
-  var tankturretrigh = new THREE.MeshLambertMaterial({ color: 0xffffff, map: THREE.ImageUtils.loadTexture('textures/m1_turret_right.png'), ambient: 0x333333 });
-  var tankturrettop = new THREE.MeshLambertMaterial({ color: 0xffffff, map: THREE.ImageUtils.loadTexture('textures/m1_turret_top.png'), ambient: 0x3333333 });
-  var tankturretbottom = new THREE.MeshLambertMaterial({ color: 0xffffff, map: THREE.ImageUtils.loadTexture('textures/m1_turret_bottom.png'), ambient: 0x333333 });
-  var tankturretfront = new THREE.MeshLambertMaterial({ color: 0xffffff, map: THREE.ImageUtils.loadTexture('textures/m1_turret_front.png'), ambient: 0x333333 });
-  var tankturretback = new THREE.MeshLambertMaterial({ color: 0xffffff, map: THREE.ImageUtils.loadTexture('textures/m1_turret_back.png'), ambient: 0x333333 });
+    var tankturretleft = new THREE.MeshLambertMaterial({ color: 0xffffff, map: textureLoader.load('textures/m1_turret_left.png'), emissive: 0x000000 });
+    var tankturretrigh = new THREE.MeshLambertMaterial({ color: 0xffffff, map: textureLoader.load('textures/m1_turret_right.png'), emissive: 0x000000 });
+    var tankturrettop = new THREE.MeshLambertMaterial({ color: 0xffffff, map: textureLoader.load('textures/m1_turret_top.png'), emissive: 0x000000 });
+    var tankturretbottom = new THREE.MeshLambertMaterial({ color: 0xffffff, map: textureLoader.load('textures/m1_turret_bottom.png'), emissive: 0x000000 });
+    var tankturretfront = new THREE.MeshLambertMaterial({ color: 0xffffff, map: textureLoader.load('textures/m1_turret_front.png'), emissive: 0x000000 });
+    var tankturretback = new THREE.MeshLambertMaterial({ color: 0xffffff, map: textureLoader.load('textures/m1_turret_back.png'), emissive: 0x000000 });
   var turretmaterials = [
     tankturretleft,   // Left side
     tankturretrigh,   // Right side
@@ -229,12 +231,12 @@ function Tank(i, n) {
 
   // Tank barrel
 
-  var tankbarrelleft = new THREE.MeshLambertMaterial({ color: 0xffffff, map: THREE.ImageUtils.loadTexture('textures/m1_barrel_left.png'), ambient: 0x333333 });
-  var tankbarrelrigh = new THREE.MeshLambertMaterial({ color: 0xffffff, map: THREE.ImageUtils.loadTexture('textures/m1_barrel_right.png'), ambient: 0x333333 });
-  var tankbarreltop = new THREE.MeshLambertMaterial({ color: 0xffffff, map: THREE.ImageUtils.loadTexture('textures/m1_barrel_top.png'), ambient: 0x3333333 });
-  var tankbarrelbottom = new THREE.MeshLambertMaterial({ color: 0xffffff, map: THREE.ImageUtils.loadTexture('textures/m1_barrel_bottom.png'), ambient: 0x333333 });
-  var tankbarrelfront = new THREE.MeshLambertMaterial({ color: 0xffffff, map: THREE.ImageUtils.loadTexture('textures/m1_barrel_front.png'), ambient: 0x333333 });
-  var tankbarrelback = new THREE.MeshLambertMaterial({ color: 0xffffff, map: THREE.ImageUtils.loadTexture('textures/m1_barrel_back.png'), ambient: 0x333333 });
+    var tankbarrelleft = new THREE.MeshLambertMaterial({ color: 0xffffff, map: textureLoader.load('textures/m1_barrel_left.png'), emissive: 0x000000 });
+    var tankbarrelrigh = new THREE.MeshLambertMaterial({ color: 0xffffff, map: textureLoader.load('textures/m1_barrel_right.png'), emissive: 0x000000 });
+    var tankbarreltop = new THREE.MeshLambertMaterial({ color: 0xffffff, map: textureLoader.load('textures/m1_barrel_top.png'), emissive: 0x000000 });
+    var tankbarrelbottom = new THREE.MeshLambertMaterial({ color: 0xffffff, map: textureLoader.load('textures/m1_barrel_bottom.png'), emissive: 0x000000 });
+    var tankbarrelfront = new THREE.MeshLambertMaterial({ color: 0xffffff, map: textureLoader.load('textures/m1_barrel_front.png'), emissive: 0x000000 });
+    var tankbarrelback = new THREE.MeshLambertMaterial({ color: 0xffffff, map: textureLoader.load('textures/m1_barrel_back.png'), emissive: 0x000000 });
   var barrelmaterials = [
     tankbarrelleft,   // Left side
     tankbarrelrigh,   // Right side

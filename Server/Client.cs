@@ -50,6 +50,7 @@ namespace Server
       clthread = _thread;
       name = _name;
       stream = _stream;
+      Score = 0;
       switch (vehicletype)
       {
         case VehicleType.Tank:
@@ -94,5 +95,8 @@ namespace Server
       get { return websocket; }
       set { websocket = value; }
     }
+
+    // Score for player (number of kills)
+    public int Score { get; set; }
   }
 }

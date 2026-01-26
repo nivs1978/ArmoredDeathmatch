@@ -27,7 +27,7 @@ function Explosion(x, y, z, particles, size, velocity) {
   this.velocity = velocity;
   this.frame = 200;
   this.cubes = [];
-  var material = new THREE.MeshLambertMaterial({ color: 0xFFFF00, ambient: 0xffffff });
+    var material = new THREE.MeshLambertMaterial({ color: 0xFFFF00, emissive: 0x000000 });
   for (var i = 0; i < this.particles; i++) {
     var obj = new THREE.Mesh(new THREE.BoxGeometry(this.size, this.size, this.size, 1, 1, 1), material);
     obj.position.x = this.x;

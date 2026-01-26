@@ -28,7 +28,7 @@ function Bullet(i, vi, x, y, z, vx, vy, vz) {
   };
 
   var geom = new THREE.BoxGeometry(10, 10, 10, 1, 1, 1);
-  var material = new THREE.MeshLambertMaterial({ color: 0xFFFFFF, ambient: 0x808080 });
+    var material = new THREE.MeshLambertMaterial({ color: 0xFFFFFF, emissive: 0x000000 });
   this.obj = new THREE.Mesh(geom, material);
   this.obj.position.x = x;
   this.obj.position.y = y;
