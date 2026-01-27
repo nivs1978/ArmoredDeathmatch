@@ -7,8 +7,6 @@
     <RootNamespace>Server</RootNamespace>
     <AssemblyName>ADServer</AssemblyName>
 
-    <!-- Preserve original intent -->
-    <PlatformTarget>x86</PlatformTarget>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>disable</Nullable>
   </PropertyGroup>
