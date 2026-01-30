@@ -22,7 +22,6 @@ var textureLoader = new THREE.TextureLoader();
 function Tank(i, n) {
   this.id = i;
   this.name = n;
-  this.dead = false;
   this.vel = [0, 0, 0];
   this.velocity = 0.0;
   this.maxvelocity = 3.0;
@@ -307,6 +306,9 @@ function setTank(id, x, /*y, */z, r, tr, br, v, ts, tts, bts) {
       tanks[i].turnspeed = ts;
       tanks[i].turret.turnspeed = tts;
       tanks[i].barrel.turnspeed = bts;
+      if (tanks[i].id == myid) {
+        window.positionCameraBehindPlayer();
+      }
       
       var n = getLandscapeNormal(i);
       var q1 = new THREE.Quaternion();

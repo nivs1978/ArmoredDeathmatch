@@ -68,7 +68,7 @@ namespace Server
 
     public abstract void Kill(); // If Vehile 'dies' this is to be called
     public abstract bool isDead();
-    public abstract long diedTime();
+    public abstract int deadFor();
     public abstract void Wake();
   }
 }

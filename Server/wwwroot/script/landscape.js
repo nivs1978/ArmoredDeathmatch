@@ -18,7 +18,6 @@ along with Armored Deathmatch.  If not, see <http://www.gnu.org/licenses/>.
 
 var landscapescale = 20000;
 var lsize = 256;
-var texture1;
 var textureLoader = new THREE.TextureLoader();
 
 var skidmarkscanvas = document.createElement('canvas');

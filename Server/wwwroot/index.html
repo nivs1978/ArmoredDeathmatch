@@ -58,9 +58,7 @@
         <br />
         Generating...
     </div>
-    <div id="clientlist" style="position: absolute; right: 100px; top: 0px; width: 200px;
-    height: 400px; overflow: hidden; z-index: 10000; background-color: transparent;
-    text-shadow: #ffffff 0px 0px 2px; color: Red; text-align: left;">
+    <div id="clientlist" style="position: fixed; right: 0; top: 0; width: 220px; height: 100vh; overflow-y: auto; z-index: 10000; background-color: rgba(255,255,255,0.05); text-shadow: #ffffff 0px 0px 2px; color: Red; text-align: left; font-size:1.4vh; overflow: hidden;">
     </div>
     <div id="messages" style="position: absolute; left: 0px; top: 0px; width: 200px;
     height: 400px; overflow: hidden; z-index: 10000; background-color: transparent;
@@ -69,8 +67,7 @@
     </div>
     <div id="icons" style="position: absolute; right: 0px; top: 0px; width: 96px; height: 48px;
     overflow: hidden; z-index: 10001; background-color: transparent; color: Black;">
-        <img src="graphics/gear.png" alt="settings" /><img src="graphics/questionmark.png"
-                                                           alt="help" onclick="showHelp()" />
+        <img src="graphics/questionmark.png" alt="help" onclick="showHelp()" style="cursor:pointer;" />
     </div>
     <div id="infowindow" style="position: absolute; left: 0px; top: 0px; width: 100%;
     height: 140px; color: black;">
@@ -90,7 +87,7 @@
             - Cookies to store your name and key setup<br />
         </div>
     </div>
-    <div id="backdiv" style="background-color: #000000; opacity: 0.8; filter: alpha(opacity=80);
+    <div id="backdiv" style="background-color: #000000; opacity: 0.8;
     position: absolute; top: 0px; left: 0px; width: 100%; height: 100%; display: none;
     z-index: 20000">
     </div>
@@ -127,28 +124,86 @@
         var oldskidx = -1;
         var oldskidy = -1;
         var mesh;
+        var texture1; // skidmarks and explosion soot overlay
+        var cameraMode = "overview";
+        var overviewPosition = new THREE.Vector3(1, 15000, 0);
+        var overviewTarget = new THREE.Vector3(0, 0, 0);
+
 
         var windowHalfX = window.innerWidth / 2;
         var windowHalfY = window.innerHeight / 2;
-
-        init();
 
         function showHelp() {
             help.style.display = "";
             setTimeout("fade('help');", 5000);
         }
 
+        function positionCameraBehindPlayer() {
+            if (!camera) return;
+            if (myid >= 0 && tanks[myid]) {
+                var r = tanks[myid].rotation + tanks[myid].tankturret.rotation.y;
+                camera.position.x = tanks[myid].tankbody.position.x - Math.sin(r) * 200;
+                camera.position.z = tanks[myid].tankbody.position.z - Math.cos(r) * 200;
+                camera.position.y = tanks[myid].tankbody.position.y + 100 + (200 * tanks[myid].tankbarrel.rotation.x);
+                camera.lookAt(tanks[myid].tankbody.position);
+            }
+        }
+
+        function setCameraOverviewMode() {
+            cameraMode = "overview";
+            applyCameraMode();
+        }
+
+        function setCameraFollowMode() {
+            cameraMode = "follow";
+            applyCameraMode();
+        }
+
+        function applyCameraMode() {
+            if (!camera) return;
+            if (cameraMode === "follow") {
+                positionCameraBehindPlayer();
+            } else {
+                camera.position.copy(overviewPosition);
+                camera.lookAt(overviewTarget);
+            }
+        }
+
+        window.setCameraOverview = setCameraOverviewMode;
+        window.setCameraFollow = setCameraFollowMode;
+        window.positionCameraBehindPlayer = positionCameraBehindPlayer;
+
+        // Ensure socket.js is loaded before trying to open the WebSocket connection
+        function ensureSocketReady() {
+            return new Promise(function (resolve, reject) {
+                resolve();
+                return;
+
+                var script = document.createElement("script");
+                script.src = "script/socket.js";
+                script.onload = resolve;
+                script.onerror = function () {
+                    reject(new Error("socket.js failed to load"));
+                };
+                document.head.appendChild(script);
+            });
+        }
+
         function init() {
             namemsgdiv = document.getElementById("namemsg");
-            setupWebSocket();
+            ensureSocketReady()
+                .then(function () { setupWebSocket(); })
+                .catch(function (err) {
+                    console.error(err);
+                    if (namemsgdiv) {
+                        namemsgdiv.innerHTML = "Unable to initialize network connection.";
+                    }
+                });
 
             container = document.getElementById('container');
 
             camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 10, 100000);
-            camera.position.x = 1; // Initial start the camera is overviewing the entire map.
-            camera.position.y = 15000;
-            camera.position.z = 0;
-            camera.lookAt(new THREE.Vector3(0, 0, 0));
+            applyCameraMode();
 
             scene = new THREE.Scene();
             scene.add(camera);
@@ -259,12 +314,12 @@
         function render() {
             var avgy = 0;
 
-            if (myid >= 0) {
-                var r = tanks[myid].rotation + tanks[myid].tankturret.rotation.y;
-                camera.position.x = tanks[myid].tankbody.position.x - Math.sin(r) * 200;
-                camera.position.z = tanks[myid].tankbody.position.z - Math.cos(r) * 200;
-                camera.position.y = tanks[myid].tankbody.position.y + 100 + (200 * tanks[myid].tankbarrel.rotation.x);
-                camera.lookAt(tanks[myid].tankbody.position);
+            if (cameraMode === "follow" && myid >= 0 && tanks[myid]) {
+                positionCameraBehindPlayer();
+            } else if (cameraMode === "overview") {
+                if (camera) {
+                    camera.lookAt(overviewTarget);
+                }
             }
 
             renderer.render(scene, camera);
@@ -274,8 +329,10 @@
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
         }
-
-        window.addEventListener('resize', callback, false);
+        window.onload = function () {
+            init();
+            window.addEventListener('resize', callback, false);
+        };
     </script>
 </body>
 </html>

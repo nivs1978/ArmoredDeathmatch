@@ -58,7 +58,7 @@ namespace Server
         velocity.z *= air;
         if (position.y < Landscape.landscape.getHeight(position.x, position.z))
         {
-          Server.Log("Bullet hit ground", ConsoleColor.Red);
+          //Server.Log("Bullet hit ground", ConsoleColor.Red);
           hitground = true;
         }
       }

@@ -41,17 +41,18 @@ function Explosion(x, y, z, particles, size, velocity) {
     };
     scene.add(obj);
     this.cubes.push(obj);
+  }
 
-    this.tick = function () {
-      for (var i = 0; i < this.particles; i++) {
-        var cube = this.cubes[i];
-        cube.position.x += cube.velocity.x;
-        cube.position.y += cube.velocity.y;
-        cube.position.z += cube.velocity.z;
-        cube.velocity.y -= 0.25;
-      }
-      this.frame--;
+  // Define tick once (avoid redefining inside the loop). Use numeric loops to avoid for..in pitfalls.
+  this.tick = function () {
+    for (var j = 0; j < this.particles; j++) {
+      var cube = this.cubes[j];
+      if (!cube) continue;
+      cube.position.x += cube.velocity.x;
+      cube.position.y += cube.velocity.y;
+      cube.position.z += cube.velocity.z;
+      cube.velocity.y -= 0.25;
     }
-
+    this.frame--;
   }
 }

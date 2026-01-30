@@ -18,14 +18,14 @@ along with Armored Deathmatch.  If not, see <http://www.gnu.org/licenses/>.
 
 var currentlyPressedKeys = {};
 
-var KeyPrimaryLeft = 37; //Cursor Left
-var KeyPrimaryRight = 39; // Cursor Right
-var KeyPrimaryUp = 38; // Cursor Up
-var KeyPrimaryDown = 40; // Cursor Down
-var KeySecondaryLeft = 65; // A Key
-var KeySecondaryRight = 68; // D Key
-var KeySecondaryUp = 87; // W Key
-var KeySecondaryDown = 83; // S key
+var KeyPrimaryLeft = 65; // A Key
+var KeyPrimaryRight = 68; // D Key
+var KeyPrimaryUp = 87; // W Key
+var KeyPrimaryDown = 83; // S key
+var KeySecondaryLeft = 37; //Cursor Left
+var KeySecondaryRight = 39; // Cursor Right
+var KeySecondaryUp = 38; // Cursor Up
+var KeySecondaryDown = 40; // Cursor Down
 var KeyFire = 32; // Space
 
 function handleKeyDown(event) {

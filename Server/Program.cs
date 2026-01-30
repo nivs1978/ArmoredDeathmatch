@@ -16,12 +16,10 @@
 	
 */
 
-using System.Collections;
 using System.Diagnostics;
 using System.Globalization;
 using System.Net.Sockets;
 using System.Net.WebSockets;
-using System.Security.Cryptography;
 using System.Text;
 
 namespace Server
@@ -31,7 +29,7 @@ namespace Server
     /// </summary>
     class Server
     {
-        public static ArrayList clients;
+        public static List<Client> clients;
         public static Landscape landscape;
         private static Timer engineticker;
         private static Timer opponentticker;
@@ -43,6 +41,7 @@ namespace Server
         private static readonly object clientsLock = new object();
         private static readonly object bulletsLock = new object();
         private static bool _initialized = false;
+        const int CPU_PLAYERS = 2;
 
         public static void Log(string text, ConsoleColor c)
         {
@@ -50,10 +49,7 @@ namespace Server
             {
                 Console.ForegroundColor = c;
                 Console.WriteLine(text);
-                using (StreamWriter sw = File.AppendText("ADServer.log"))
-                {
-                    sw.WriteLine(text);
-                }
+                Console.ResetColor();
             }
         }
 
@@ -112,9 +108,12 @@ namespace Server
         {
             try
             {
-                var buffer = Encoding.UTF8.GetBytes(text);
-                var seg = new ArraySegment<byte>(buffer);
-                ws.SendAsync(seg, WebSocketMessageType.Text, true, CancellationToken.None).GetAwaiter().GetResult();
+                if (ws != null && (ws.State == WebSocketState.Open || ws.State == WebSocketState.CloseReceived))
+                {
+                    var buffer = Encoding.UTF8.GetBytes(text);
+                    var seg = new ArraySegment<byte>(buffer);
+                    ws.SendAsync(seg, WebSocketMessageType.Text, true, CancellationToken.None).GetAwaiter().GetResult();
+                }
             }
             catch (Exception ex)
             {
@@ -130,6 +129,7 @@ namespace Server
             else if (c.WebSocket != null)
                 sendText(c.WebSocket, text);
         }
+
         // Handle a client connected over WebSocket (used by ASP.NET Core endpoint)
         public static async Task HandleWebSocket(WebSocket webSocket)
         {
@@ -137,7 +137,7 @@ namespace Server
             Client client = new Client(id, null, null, null, Client.VehicleType.Tank);
             client.WebSocket = webSocket;
             // Ensure server state is initialized if background Start hasn't run yet
-            if (clients == null) clients = new ArrayList();
+            if (clients == null) clients = new List<Client>();
             if (landscape == null) landscape = new Landscape(257);
 
             lock (clientsLock)
@@ -216,9 +216,9 @@ namespace Server
         public static int getBulletId()
         {
             int available = 0;
-            foreach (Bullet b in bullets)
+            for (int i=0; i<bullets.Count; i++)
             {
-                available = Math.Max(b.id, available);
+                available = Math.Max(bullets[i].id, available);
             }
             available++;
             return available;
@@ -355,7 +355,8 @@ namespace Server
             StringBuilder ret = new StringBuilder();
             ret.Append("{\"type\": \"clients\", \"list\": [");
             bool first = true;
-            for (int n = 0; n < clients.Count; n++)
+            var sortedClients = clients.OrderByDescending(c => c.Score).ToList();
+            for (int n = 0; n < sortedClients.Count; n++)
             {
                 Client cl = (Client)clients[n];
                 if (cl.Name != null)
@@ -375,10 +376,9 @@ namespace Server
         // For now the AI is doing "monkey business" by pressing and releasing random keys
         private static void doAI(Vehicle v)
         {
-            r.Next(1, 20);
             if (r.Next(0, 9) == 0)
             {
-                int key = r.Next(1, 9);
+                int key = r.Next(1, 10);
                 if (v.isFunctionPressed((Vehicle.VehicleFunction)key))
                     v.functionReleased((Vehicle.VehicleFunction)key);
                 else
@@ -397,27 +397,26 @@ namespace Server
                 {
                     foreach (Client c in clients)
                     {
-                        if (!c.vehicle.isDead())
-                            c.vehicle.Tick();
-                        else
+                        if (c.vehicle.isDead())
                         {
-                            long now = DateTime.Now.Ticks;
-                            now = now - c.vehicle.diedTime();
-                            now = now / TimeSpan.TicksPerSecond;
-                            if (now > 10)
+                            if (c.vehicle.deadFor() > 10)
                             {
-
+                                c.vehicle.Wake();
+                                string respawnMsg = "{ \"type\": \"respawn\", \"id\": \"" + c.Id + "\", \"name\": \"" + c.Name + "\"}";
+                                sendText(c, respawnMsg); // ensure player receives own respawn event
+                                sendToAllClients(c, respawnMsg);
                             }
                         }
-                        if (c.Stream != null || c.WebSocket != null)
+                        if (!c.vehicle.isDead())
                         {
-                            /*VehicleTank vt = (VehicleTank)autos[0];
-                            VehicleTank v = (VehicleTank)c.vehicle;
-                            vt.set(v.position.x, v.position.y, v.position.z, v.bodyrotation, v.turretrotation, v.barrelrotation);*/
-                        }
-                        else
-                        {
-                            doAI(c.vehicle);
+                            c.vehicle.Tick();
+                            if (c.Stream != null || c.WebSocket != null)
+                            {
+                            }
+                            else
+                            {
+                                doAI(c.vehicle);
+                            }
                         }
                     }
                 }
@@ -442,7 +441,7 @@ namespace Server
                             Client hitClient = null;
                             lock (clientsLock)
                             {
-                                foreach (Client c in clients)
+                                foreach (Client c in clients.Where(c=>!c.vehicle.isDead()))
                                 {
                                     if (bullets[i].hitVehicle(c.vehicle))
                                     {
@@ -511,9 +510,11 @@ namespace Server
                 bulletarraylocked = true;
                 lock (bulletsLock)
                 {
-                    foreach (Bullet b in bullets)
+                    for (int i = 0; i < bullets.Count; i++)
                     {
-                        sendToAllClients(null, b.toJSON());
+                        var bullet = bullets[i];
+                        if (bullet == null) continue;
+                        sendToAllClients(null, bullet.toJSON());
                     }
                 }
                 bulletarraylocked = false;
@@ -546,7 +547,7 @@ namespace Server
                 // EnsureInitialized already called; do not recreate landscape/clients here
                 // No raw TcpListener thread; WebSocket connections are accepted via ASP.NET /chat endpoint.
 
-                for (int i = 1; i < 5; i++)
+                for (int i = 1; i < CPU_PLAYERS; i++)
                 {
                     int id = getVehicleId();
                     Client c = new Client(id, "CPU" + i, System.Threading.Thread.CurrentThread, null, Client.VehicleType.Tank);
@@ -577,26 +578,11 @@ namespace Server
             }
         }
 
-        static string ReadLine(Stream stream)
-        {
-            var sb = new StringBuilder();
-            var buffer = new List<byte>();
-            while (true)
-            {
-                buffer.Add((byte)stream.ReadByte());
-                var line = Encoding.ASCII.GetString(buffer.ToArray());
-                if (line.EndsWith(Environment.NewLine))
-                {
-                    return line.Substring(0, line.Length - 2);
-                }
-            }
-        }
-
         private static void EnsureInitialized()
         {
             if (_initialized) return;
             _initialized = true;
-            if (clients == null) clients = new ArrayList();
+            if (clients == null) clients = new List<Client>();
             if (landscape == null) landscape = new Landscape(257);
         }
     }
