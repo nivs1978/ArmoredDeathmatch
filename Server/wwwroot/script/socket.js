@@ -18,6 +18,7 @@ along with Armored Deathmatch.  If not, see <http://www.gnu.org/licenses/>.
 
 var myname = "";
 var wsUri = null;
+var fullscreenRequested = false;
 
 function setupWebSocket() {
     // Build WebSocket URI relative to the current page so it's not bound to a specific domain or IP.
@@ -72,6 +73,7 @@ function isEnterKey(e) {
     if (e.keyCode == 13) {
         if (myname == "") {
             var msg = typenamediv.value;
+            requestFullscreen();
             doSend("/nick " + msg)
         } else {
             var name = typehere.value;
@@ -80,6 +82,27 @@ function isEnterKey(e) {
         }
     }
     return false;
+}
+
+function requestFullscreen() {
+    if (fullscreenRequested)
+        return;
+    var element = document.documentElement;
+    if (!element)
+        return;
+    var request = element.requestFullscreen
+        || element.webkitRequestFullscreen
+        || element.mozRequestFullScreen
+        || element.msRequestFullscreen
+        || element.webkitRequestFullScreen;
+    if (!request)
+        return;
+    fullscreenRequested = true;
+    try {
+        request.call(element);
+    } catch (err) {
+        fullscreenRequested = false;
+    }
 }
 
 function processMessage(json) {

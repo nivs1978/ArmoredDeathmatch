@@ -52,12 +52,9 @@ namespace Server
         double barrelturnacceleration = 0.001;
         double barrelturndeceleration = 0.003;
         double barrelmaxturnspeed = 0.005;
-        double barrelminturn = 0.0;
+		double barrelminturn = -Math.PI / 12.0; // allow 15 degrees downward tilt
         double barrelmaxturn = 0.3;
         double bulletspeed = 20.0;
-
-        public Vector3D barrelmount;
-        public Vector3D barreldirection;
 
         private static readonly Vector3[] NormalSampleVertices = new[]
         {
@@ -395,8 +392,6 @@ namespace Server
 
             muzzle = new Vector3D(muzzleWorld.X, muzzleWorld.Y, muzzleWorld.Z);
             direction = new Vector3D(barrelForward.X, barrelForward.Y, barrelForward.Z);
-            barrelmount = muzzle;
-            barreldirection = direction;
             return true;
         }
 

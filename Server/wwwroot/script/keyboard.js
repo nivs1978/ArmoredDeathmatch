@@ -56,12 +56,7 @@ function handleKeyDown(event) {
         doSend("+8");
         break;
       case KeyFire:
-        var bstart = new THREE.Vector3().setFromMatrixPosition(tanks[myid].tankbarrel.matrixWorld);
-        var vector = new THREE.Vector3(0, 0, 56);
-        var bend = vector.applyMatrix4(tanks[myid].tankbarrel.matrixWorld);
-        var direction = bstart.subVectors(bend, bstart);
-        direction.normalize();
-        doSend("+9;" + bend.x + ";" + bend.y + ";" + bend.z + ";" + direction.x + ";" + direction.y + ";" + direction.z);
+        doSend("+9");
         break;
     }
   }
