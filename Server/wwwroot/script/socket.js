@@ -99,9 +99,35 @@ function requestFullscreen() {
         return;
     fullscreenRequested = true;
     try {
-        request.call(element);
+        var result = request.call(element);
+        if (result && typeof result.catch === 'function') {
+            result.catch(function () { });
+        }
     } catch (err) {
         fullscreenRequested = false;
+    }
+    tryRequestPointerLock();
+}
+
+function tryRequestPointerLock() {
+    try {
+        if (typeof requestPointerLockForCanvas === 'function') {
+            requestPointerLockForCanvas();
+            return;
+        }
+        if (typeof pointerLockElement !== 'undefined' && pointerLockElement) {
+            var request = pointerLockElement.requestPointerLock
+                || pointerLockElement.mozRequestPointerLock
+                || pointerLockElement.webkitRequestPointerLock;
+            if (request) {
+                var lockPromise = request.call(pointerLockElement);
+                if (lockPromise && typeof lockPromise.catch === 'function') {
+                    lockPromise.catch(function () { });
+                }
+            }
+        }
+    } catch (err) {
+        // ignore pointer lock failures; user can retry with ESC/click
     }
 }
 
@@ -114,11 +140,24 @@ function processMessage(json) {
         setTank(p[0] * 1.0, p[1] * 1.0, /*p[2] * 1.0,*/ p[2] * 1.0, p[3] * 1.0, p[4] * 1.0, p[5] * 1.0, p[6] * 1.0, p[7] * 1.0, p[8] * 1.0, p[9] * 1.0);
     } else if (msg.b) { // Bullet position
         var b = msg.b.split(";");
-        if (bulletExists(b[0] * 1))
-            setBullet(b[0] * 1, b[2] * 1.0, b[3] * 1.0, b[4] * 1.0, b[5] * 1.0, b[6] * 1.0, b[7] * 1.0);
+        var bulletId = b[0] * 1;
+        var shooterId = b[1] * 1;
+        var spawnX = b[2] * 1.0;
+        var spawnY = b[3] * 1.0;
+        var spawnZ = b[4] * 1.0;
+        var velX = b[5] * 1.0;
+        var velY = b[6] * 1.0;
+        var velZ = b[7] * 1.0;
+        if (bulletExists(bulletId))
+            setBullet(bulletId, spawnX, spawnY, spawnZ, velX, velY, velZ);
         else {
-            var bullet = new Bullet(b[0] * 1, b[1] * 1.0, b[2] * 1.0, b[3] * 1.0, b[4] * 1.0, b[5] * 1.0, b[6] * 1.0, b[7] * 1.0);
+            var bullet = new Bullet(bulletId, shooterId * 1.0, spawnX, spawnY, spawnZ, velX, velY, velZ);
             bullets.push(bullet);
+            if (myid >= 0 && shooterId === myid) {
+                playLocalShotSound();
+            } else {
+                playDistantShotSoundAt(spawnX, spawnY, spawnZ);
+            }
         }
     } else {
         switch (msg.type) {
@@ -229,6 +268,10 @@ function processMessage(json) {
                 if (obj != null) {
                     try { scene.remove(obj); } catch (e) { }
                 }
+                var soundPos = null;
+                if (obj && obj.position) {
+                    soundPos = { x: obj.position.x, y: obj.position.y, z: obj.position.z };
+                }
                 // Draw skidmarks only if coordinates present and numeric
                 var bx = (typeof msg.x !== 'undefined') ? Number(msg.x) : NaN;
                 var bz = (typeof msg.z !== 'undefined') ? Number(msg.z) : NaN;
@@ -247,16 +290,30 @@ function processMessage(json) {
                     ctx.fill();
                     ctx.closePath();
                     texture1.needsUpdate = true;
+                    if (!soundPos) {
+                        var groundY = 0;
+                        try {
+                            groundY = pointHeight(toHeightMapX(bx), toHeightMapZ(bz));
+                        } catch (e) {
+                            groundY = 0;
+                        }
+                        soundPos = { x: bx, y: groundY, z: bz };
+                    }
+                }
+                if (soundPos) {
+                    playHitGroundSoundAt(soundPos.x, soundPos.y, soundPos.z);
                 }
                 break;
             case "vhit":
                 //writeToScreen("Bullet hit vehicle");
                 var obj = null;
+                var vehicleSoundPos = null;
                 for (var i = bullets.length - 1; i >= 0; i--) {
                     if (bullets[i]) {
                         if (bullets[i].id == msg.bid) {
                             obj = bullets[i].obj;
                             explosions.push(new Explosion(obj.position.x, obj.position.y, obj.position.z, 100, 20, 10));
+                            vehicleSoundPos = { x: obj.position.x, y: obj.position.y, z: obj.position.z };
                             bullets.splice(i, 1);
                             break;
                         }
@@ -282,6 +339,15 @@ function processMessage(json) {
                     ctx.fill();
                     ctx.closePath();
                     texture1.needsUpdate = true;
+                    if (!vehicleSoundPos) {
+                        var vhGroundY = 0;
+                        try {
+                            vhGroundY = pointHeight(toHeightMapX(xnum), toHeightMapZ(znum));
+                        } catch (e) {
+                            vhGroundY = 0;
+                        }
+                        vehicleSoundPos = { x: xnum, y: vhGroundY, z: znum };
+                    }
                 }
                 // If vid refers to a tank we know about, hide its body; otherwise skip to avoid errors
                 if (msg.vid != null && tanks[msg.vid] && tanks[msg.vid].tankbody) {
@@ -303,6 +369,9 @@ function processMessage(json) {
                 }
                 if (msg.vid == myid) {
                     window.setCameraOverview();
+                }
+                if (vehicleSoundPos && msg.vid != myid) {
+                    playHitVehicleSoundAt(vehicleSoundPos.x, vehicleSoundPos.y, vehicleSoundPos.z);
                 }
                 break;
         }

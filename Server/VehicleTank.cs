@@ -345,6 +345,33 @@ namespace Server
             dead = false;
         }
 
+        public override void ApplyTurretInput(double turretDelta, double barrelDelta)
+        {
+            if (double.IsNaN(turretDelta) || double.IsNaN(barrelDelta))
+                return;
+
+            const double maxTurretStep = 0.25;
+            const double maxBarrelStep = 0.2;
+
+            if (turretDelta > maxTurretStep)
+                turretDelta = maxTurretStep;
+            else if (turretDelta < -maxTurretStep)
+                turretDelta = -maxTurretStep;
+
+            if (barrelDelta > maxBarrelStep)
+                barrelDelta = maxBarrelStep;
+            else if (barrelDelta < -maxBarrelStep)
+                barrelDelta = -maxBarrelStep;
+
+            turretrotation -= turretDelta;
+            barrelrotation += barrelDelta;
+
+            if (barrelrotation < -barrelmaxturn)
+                barrelrotation = -barrelmaxturn;
+            if (barrelrotation > -barrelminturn)
+                barrelrotation = -barrelminturn;
+        }
+
         private bool TryComputeBarrelPose(out Vector3D muzzle, out Vector3D direction)
         {
             muzzle = null;

@@ -63,34 +63,28 @@
     text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black; color: Red;
     text-align: left;">
     </div>
-    <div id="icons" style="position: absolute; right: 0px; top: 0px; width: 96px; height: 48px;
-    overflow: hidden; z-index: 10001; background-color: transparent; color: Black;">
-        <img src="graphics/questionmark.png" alt="help" onclick="showHelp()" style="cursor:pointer;" />
-    </div>
-    <div id="infowindow" style="position: absolute; left: 0px; top: 0px; width: 100%;
-    height: 140px; color: black;">
-        <div>
-        </div>
-        <div id="help" style="background-image: url(graphics/t80.png); background-repeat:repeat; display:none;">
-            Welcome to this small tank game in development<br />
-            <img src="graphics/wasdkeys.png" alt="" />&nbsp;<img src="graphics/arrowkeys.png"
-                                                                 alt="" />
-            <br />
-            Things to come:<br />
-            - Gravity<br />
-            - Different vehicles<br />
-            - Use of mouse to turn camera/turret and shooting<br />
-            - Full screen<br />
-            - Remap keys (Got complaints from french people that WASD are bad keys)<br />
-            - Cookies to store your name and key setup<br />
-        </div>
-    </div>
     <div id="backdiv" style="background-color: #000000; opacity: 0.8;
     position: absolute; top: 0px; left: 0px; width: 100%; height: 100%; display: none;
     z-index: 20000">
     </div>
-    <div id="setnamediv" style="position: absolute; left: 50%; top: 50%; margin-left: -400px; margin-top: -50px; width: 800px; height: 100px; text-align: center; display: none; z-index: 20001">
-        <img src="graphics/armoreddeathmatch.png" alt="ArmoredDeathmatch" />
+    <div id="setnamediv" style="position: absolute; left: 50%; top: 0%; margin-left: -400px; margin-top: -50px; width: 800px; height: 100px; text-align: center; display: none; z-index: 20001">
+        <div id="help" style="color: white;">
+            Welcome to this small tank game in development<br />
+            <img src="graphics/wasdkeys.png" alt="" />&nbsp;<img src="graphics/arrowkeys.png"
+                                                                 alt="" />
+            <br />
+            Use mouse or arrow keys to control turret.<br />
+            <br />
+            Things to improve:<br />
+            Vehcile damage (instead of one shot one kill)<br />
+            Collisions between vehicles<br />
+            Gravity when driving over edges.<br />
+            Different vehicles<br />
+            Buildings, trees and other objects<br />
+            Remap keys (Got complaints from french people that WASD are bad keys)<br />
+            Local storage to store your name and key setup<br />
+            Better network code<br />
+        </div>        <img src="graphics/armoreddeathmatch.png" alt="ArmoredDeathmatch" />
         Enter your name<br />
         <input id="typename" type="text" value="Guest" onkeyup="return isEnterKey(event);" /><br />
         <div id="namemsg" style="color: red">
@@ -98,6 +92,9 @@
     </div>
     <audio id="intromusic">
         <source src="audio/When_Johnny_Comes_Marching_Home.ogg" type="audio/ogg" />
+    </audio>
+    <audio id="shotSound" preload="auto">
+        <source src="audio/shot.ogg" type="audio/ogg" />
     </audio>
     <script src="script/three.js" type="text/javascript"></script>
     <script src="script/landscape.js" type="text/javascript"></script>
@@ -116,6 +113,14 @@
         var typenamediv = document.getElementById("typename");
         var clientlistdiv = document.getElementById("clientlist");
         var help = document.getElementById("help");
+        var shotAudio = document.getElementById("shotSound");
+        var audioListener = null;
+        var hitGroundAudioBuffer = null;
+        var hitGroundAudioLoader = null;
+        var distantShotAudioBuffer = null;
+        var distantShotAudioLoader = null;
+        var hitVehicleAudioBuffer = null;
+        var hitVehicleAudioLoader = null;
         var myid = -1;
         var uvno = 0;
         var box = new Array();
@@ -126,6 +131,15 @@
         var cameraMode = "overview";
         var overviewPosition = new THREE.Vector3(1, 15000, 0);
         var overviewTarget = new THREE.Vector3(0, 0, 0);
+        var pointerLockElement = null;
+        var pointerLocked = false;
+        var pointerLockHandlersBound = false;
+        var pendingTurretDelta = 0;
+        var pendingBarrelDelta = 0;
+        var mouseAimUpdateScheduled = false;
+        var turretSensitivity = 0.0025;
+        var barrelSensitivity = 0.0015;
+        var mouseFireActive = false;
 
 
         var windowHalfX = window.innerWidth / 2;
@@ -171,6 +185,301 @@
         window.setCameraFollow = setCameraFollowMode;
         window.positionCameraBehindPlayer = positionCameraBehindPlayer;
 
+        function initializePointerLock() {
+            if (!renderer)
+                return;
+            pointerLockElement = renderer.domElement;
+            if (!pointerLockHandlersBound) {
+                document.addEventListener('pointerlockchange', handlePointerLockChange, false);
+                document.addEventListener('mozpointerlockchange', handlePointerLockChange, false);
+                document.addEventListener('webkitpointerlockchange', handlePointerLockChange, false);
+                document.addEventListener('pointerlockerror', handlePointerLockError, false);
+                document.addEventListener('mozpointerlockerror', handlePointerLockError, false);
+                document.addEventListener('webkitpointerlockerror', handlePointerLockError, false);
+                document.addEventListener('mousemove', handleMouseMove, false);
+                document.addEventListener('mousedown', handleMouseDown, false);
+                document.addEventListener('mouseup', handleMouseUp, false);
+                pointerLockHandlersBound = true;
+            }
+        }
+
+        function requestPointerLockForCanvas() {
+            if (!pointerLockElement)
+                return;
+            var request = pointerLockElement.requestPointerLock
+                || pointerLockElement.mozRequestPointerLock
+                || pointerLockElement.webkitRequestPointerLock;
+            if (!request)
+                return;
+            try {
+                var lockPromise = request.call(pointerLockElement);
+                if (lockPromise && typeof lockPromise.catch === 'function') {
+                    lockPromise.catch(function () { });
+                }
+            } catch (err) {
+                // ignored – browsers can reject if gesture requirements are not satisfied
+            }
+        }
+
+        function handlePointerLockChange() {
+            var current = document.pointerLockElement
+                || document.mozPointerLockElement
+                || document.webkitPointerLockElement;
+            pointerLocked = (current === pointerLockElement);
+            if (!pointerLocked) {
+                pendingTurretDelta = 0;
+                pendingBarrelDelta = 0;
+                releaseMouseFire();
+            }
+        }
+
+        function handlePointerLockError() {
+            console.warn('Pointer lock request failed');
+        }
+
+        function handleMouseMove(event) {
+            if (!pointerLocked)
+                return;
+            var dx = event.movementX || event.mozMovementX || event.webkitMovementX || 0;
+            var dy = event.movementY || event.mozMovementY || event.webkitMovementY || 0;
+            if (dx === 0 && dy === 0)
+                return;
+            pendingTurretDelta += dx * turretSensitivity;
+            pendingBarrelDelta += dy * barrelSensitivity;
+            queueMouseAimUpdate();
+        }
+
+        function queueMouseAimUpdate() {
+            if (mouseAimUpdateScheduled)
+                return;
+            mouseAimUpdateScheduled = true;
+            requestAnimationFrame(flushMouseAimUpdate);
+        }
+
+        function flushMouseAimUpdate() {
+            mouseAimUpdateScheduled = false;
+            if (!pointerLocked)
+                return;
+            if (typeof connected === "undefined" || !connected || myid < 0)
+                return;
+            var turretDelta = pendingTurretDelta;
+            var barrelDelta = pendingBarrelDelta;
+            pendingTurretDelta = 0;
+            pendingBarrelDelta = 0;
+            if (Math.abs(turretDelta) < 0.0001 && Math.abs(barrelDelta) < 0.0001)
+                return;
+            var payload = "mouse:" + turretDelta.toFixed(5) + ":" + barrelDelta.toFixed(5);
+            doSend(payload);
+        }
+
+        function playLocalShotSound() {
+            if (!shotAudio)
+                return;
+            try {
+                shotAudio.currentTime = 0;
+                var playPromise = shotAudio.play();
+                if (playPromise && typeof playPromise.catch === "function") {
+                    playPromise.catch(function () { });
+                }
+            } catch (err) {
+                // Ignore audio play errors (e.g. autoplay restrictions)
+            }
+        }
+
+        function ensureAudioListener() {
+            if (audioListener || !camera)
+                return;
+            audioListener = new THREE.AudioListener();
+            camera.add(audioListener);
+        }
+
+        function loadHitGroundSound() {
+            if (hitGroundAudioBuffer || hitGroundAudioLoader)
+                return;
+            hitGroundAudioLoader = new THREE.AudioLoader();
+            hitGroundAudioLoader.load('audio/hit_ground.ogg', function (buffer) {
+                hitGroundAudioBuffer = buffer;
+            }, undefined, function (err) {
+                console.error('Failed to load hit ground sound', err);
+            });
+        }
+
+        function loadDistantShotSound() {
+            if (distantShotAudioBuffer || distantShotAudioLoader)
+                return;
+            distantShotAudioLoader = new THREE.AudioLoader();
+            distantShotAudioLoader.load('audio/distant_shot.ogg', function (buffer) {
+                distantShotAudioBuffer = buffer;
+            }, undefined, function (err) {
+                console.error('Failed to load distant shot sound', err);
+            });
+        }
+
+        function loadHitVehicleSound() {
+            if (hitVehicleAudioBuffer || hitVehicleAudioLoader)
+                return;
+            hitVehicleAudioLoader = new THREE.AudioLoader();
+            hitVehicleAudioLoader.load('audio/hit_vehicle.ogg', function (buffer) {
+                hitVehicleAudioBuffer = buffer;
+            }, undefined, function (err) {
+                console.error('Failed to load hit vehicle sound', err);
+            });
+        }
+
+        function playHitGroundSoundAt(x, y, z) {
+            if (!scene)
+                return;
+            if (!audioListener)
+                ensureAudioListener();
+            if (!audioListener || !hitGroundAudioBuffer)
+                return;
+            var emitter = new THREE.Object3D();
+            emitter.position.set(x || 0, y || 0, z || 0);
+            var sound = new THREE.PositionalAudio(audioListener);
+            sound.setBuffer(hitGroundAudioBuffer);
+            sound.setRefDistance(1000);
+            sound.setMaxDistance(10000);
+            sound.setRolloffFactor(2);
+            sound.setVolume(1.0);
+            sound.setLoop(false);
+            emitter.add(sound);
+            scene.add(emitter);
+            sound.play();
+            var cleanup = function () {
+                if (emitter.parent === scene) {
+                    scene.remove(emitter);
+                }
+                if (sound && sound.isPlaying) {
+                    sound.stop();
+                }
+                if (sound) {
+                    try {
+                        sound.disconnect();
+                    } catch {}
+                }
+            };
+            if (sound.source && sound.source.onended !== undefined) {
+                sound.source.onended = cleanup;
+            } else if (sound.buffer && sound.buffer.duration) {
+                //setTimeout(cleanup, sound.buffer.duration * 1000 + 100);
+            }
+        }
+
+        window.playHitGroundSoundAt = playHitGroundSoundAt;
+
+        function playDistantShotSoundAt(x, y, z) {
+            if (!scene)
+                return;
+            if (!audioListener)
+                ensureAudioListener();
+            if (!audioListener || !distantShotAudioBuffer)
+                return;
+            var emitter = new THREE.Object3D();
+            emitter.position.set(x || 0, y || 0, z || 0);
+            var sound = new THREE.PositionalAudio(audioListener);
+            sound.setBuffer(distantShotAudioBuffer);
+            sound.setRefDistance(1000);
+            sound.setMaxDistance(10000);
+            sound.setRolloffFactor(2);
+            sound.setVolume(1.0);
+            sound.setLoop(false);
+            emitter.add(sound);
+            scene.add(emitter);
+            sound.play();
+            var cleanup = function () {
+                if (emitter.parent === scene) {
+                    scene.remove(emitter);
+                }
+                if (sound && sound.isPlaying) {
+                    sound.stop();
+                }
+                if (sound) {
+                    sound.disconnect();
+                }
+            };
+            if (sound.source && sound.source.onended !== undefined) {
+                sound.source.onended = cleanup;
+            } else if (sound.buffer && sound.buffer.duration) {
+                //setTimeout(cleanup, sound.buffer.duration * 1000 + 100);
+            }
+        }
+
+        window.playDistantShotSoundAt = playDistantShotSoundAt;
+
+        function playHitVehicleSoundAt(x, y, z) {
+            if (!scene)
+                return;
+            if (!audioListener)
+                ensureAudioListener();
+            if (!audioListener || !hitVehicleAudioBuffer)
+                return;
+            var emitter = new THREE.Object3D();
+            emitter.position.set(x || 0, y || 0, z || 0);
+            var sound = new THREE.PositionalAudio(audioListener);
+            sound.setBuffer(hitVehicleAudioBuffer);
+            sound.setRefDistance(1000);
+            sound.setMaxDistance(10000);
+            sound.setRolloffFactor(2);
+            sound.setVolume(1.0);
+            sound.setLoop(false);
+            emitter.add(sound);
+            scene.add(emitter);
+            sound.play();
+            var cleanup = function () {
+                if (emitter.parent === scene) {
+                    scene.remove(emitter);
+                }
+                if (sound && sound.isPlaying) {
+                    sound.stop();
+                }
+                if (sound) {
+                    sound.disconnect();
+                }
+            };
+            if (sound.source && sound.source.onended !== undefined) {
+                sound.source.onended = cleanup;
+            } else if (sound.buffer && sound.buffer.duration) {
+                //setTimeout(cleanup, sound.buffer.duration * 1000 + 100);
+            }
+        }
+
+        window.playHitVehicleSoundAt = playHitVehicleSoundAt;
+
+        function handleMouseDown(event) {
+            if (event.button !== 0)
+                return;
+            if (!pointerLocked) {
+                if (!pointerLockElement || event.target !== pointerLockElement)
+                    return;
+                requestPointerLockForCanvas();
+                event.preventDefault();
+                return;
+            }
+            if (mouseFireActive)
+                return;
+            if (typeof connected === "undefined" || !connected)
+                return;
+            mouseFireActive = true;
+            doSend("+9");
+            event.preventDefault();
+        }
+
+        function handleMouseUp(event) {
+            if (event.button !== 0)
+                return;
+            releaseMouseFire();
+            if (pointerLocked)
+                event.preventDefault();
+        }
+
+        function releaseMouseFire() {
+            if (!mouseFireActive)
+                return;
+            mouseFireActive = false;
+            if (typeof connected !== "undefined" && connected)
+                doSend("-9");
+        }
+
         // Ensure socket.js is loaded before trying to open the WebSocket connection
         function ensureSocketReady() {
             return new Promise(function (resolve, reject) {
@@ -202,6 +511,10 @@
 
             camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 10, 100000);
             applyCameraMode();
+            ensureAudioListener();
+            loadHitGroundSound();
+            loadDistantShotSound();
+            loadHitVehicleSound();
 
             scene = new THREE.Scene();
             scene.add(camera);
@@ -248,6 +561,7 @@
             container.innerHTML = "";
 
             container.appendChild(renderer.domElement);
+            initializePointerLock();
         }
 
         function animate() {

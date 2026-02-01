@@ -303,6 +303,18 @@ namespace Server
                     Log("* error: " + message, ConsoleColor.Red);
                 }
             }
+            else if (message.StartsWith("mouse:", StringComparison.OrdinalIgnoreCase))
+            {
+                var parts = message.Split(':');
+                if (parts.Length >= 3 && client?.vehicle != null)
+                {
+                    if (double.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out double turretDelta) &&
+                        double.TryParse(parts[2], NumberStyles.Float, CultureInfo.InvariantCulture, out double barrelDelta))
+                    {
+                        client.vehicle.ApplyTurretInput(turretDelta, barrelDelta);
+                    }
+                }
+            }
             else if (message.ToLower().StartsWith("+")) // Key down
             {
                 client.vehicle.functionPressed((Vehicle.VehicleFunction)Int32.Parse(message.Substring(1)));

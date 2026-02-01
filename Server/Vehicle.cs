@@ -70,5 +70,10 @@ namespace Server
     public abstract bool isDead();
     public abstract int deadFor();
     public abstract void Wake();
+
+    public virtual void ApplyTurretInput(double turretDelta, double barrelDelta)
+    {
+      // Default vehicles ignore mouse input unless they override this hook.
+    }
   }
 }
