@@ -34,6 +34,25 @@ function setupWebSocket() {
     websocket.onerror = function (evt) { onError(evt) };
 }
 
+function fadeOutAudio(audio, durationMs) {
+    if (!audio || typeof audio.volume !== 'number') {
+        return;
+    }
+    var startVolume = audio.volume;
+    var steps = Math.max(1, Math.floor(durationMs / 50));
+    var step = 0;
+    var fadeInterval = setInterval(function () {
+        step++;
+        var progress = step / steps;
+        audio.volume = Math.max(0, startVolume * (1 - progress));
+        if (progress >= 1) {
+            clearInterval(fadeInterval);
+            audio.pause();
+            audio.volume = startVolume;
+        }
+    }, 50);
+}
+
 function onOpen(evt) {
     connected = true;
     writeToScreen("CONNECTED");
@@ -43,8 +62,6 @@ function onOpen(evt) {
     });
     var namediv = document.getElementById("setnamediv");
     namediv.style.display = "";
-    namediv.style.display = "";
-    typenamediv.focus();
 }
 function onClose(evt) {
     writeToScreen("Disconnected. Press F5 to reconnect)");
@@ -222,7 +239,7 @@ function processMessage(json) {
                     document.onkeydown = handleKeyDown;
                     document.onkeyup = handleKeyUp;
                     var player = document.getElementById("intromusic");
-                    player.pause();
+                    fadeOutAudio(player, 5000);
                     //writeToScreen("Music paused");
                     window.setCameraFollow();
                 }
@@ -289,7 +306,9 @@ function processMessage(json) {
                     ctx.arc(bskidx, bskidy, 4, 0, Math.PI * 2, true);
                     ctx.fill();
                     ctx.closePath();
-                    texture1.needsUpdate = true;
+                    if (texture1) {
+                        texture1.needsUpdate = true;
+                    }
                     if (!soundPos) {
                         var groundY = 0;
                         try {

@@ -56,7 +56,7 @@
         <br />
         Generating...
     </div>
-    <div id="clientlist" style="position: fixed; right: 0; top: 0; width: 220px; height: 100vh; overflow-y: auto; z-index: 10000; background-color: rgba(255,255,255,0.05); text-shadow: #ffffff 0px 0px 2px; color: Red; text-align: left; font-size:1.6vh; overflow: hidden;">
+    <div id="clientlist" style="position: fixed; right: 0; top: 0; width: 220px; height: 100vh; overflow-y: auto; padding-right:10px; z-index: 10000; text-shadow: #ffffff 0px 0px 2px; color: Red; text-align: left; font-size:1.8vh; overflow: hidden;">
     </div>
     <div id="messages" style="position: absolute; left: 0px; top: 0px; width: 200px;
     height: 400px; overflow: hidden; z-index: 10000; background-color: transparent;
@@ -86,7 +86,7 @@
             Better network code<br />
         </div>        <img src="graphics/armoreddeathmatch.png" alt="ArmoredDeathmatch" />
         Enter your name<br />
-        <input id="typename" type="text" value="Guest" onkeyup="return isEnterKey(event);" /><br />
+        <input id="typename" type="text" value="" onkeyup="return isEnterKey(event);" /><br />
         <div id="namemsg" style="color: red">
         </div>
     </div>
@@ -641,6 +641,13 @@
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
         }
+        function focusPlayerNameInput() {
+            var nameInput = document.getElementById('typename');
+            if (nameInput) {
+                nameInput.focus();
+            }
+        }
+
         window.onload = function () {
             init();
             window.addEventListener('resize', callback, false);
